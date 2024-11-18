@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// to conncet supabase
+// datasource db {
+//   provider  = "postgresql"
+//   url       = env("DATABASE_URL")
+//   directUrl = env("DIRECT_URL")
+// }
+
+// Define the role enum
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+// Define the booking status enum
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// Room Type
+enum RoomType {
+  SINGLE
+  DOUBLE
+  TWIN
+  TRIPLE
+}
+
+// User Management with role flag
+model User {
+  id        Int          @id @default(autoincrement())
+  email     String       @unique
+  phone     String?
+  password  String?
+  role      Role?        @default(USER) // Default role is 'USER'
+  createdAt DateTime     @default(now())
+  profile   UserProfile?
+  bookings  Booking[]
+}
+
+model UserProfile {
+  id     Int    @id @default(autoincrement())
+  userId Int    @unique
+  name   String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+// Hotel and Room Booking
+model Hotel {
+  id       Int     @id @default(autoincrement())
+  name     String
+  location String
+  image    String?
+  ratings  String?
+  rooms    Room[]
+}
+
+model Room {
+  id       Int       @id @default(autoincrement())
+  hotelId  Int
+  roomType RoomType  @default(SINGLE)
+  price    Float
+  image    String?
+  hotel    Hotel     @relation(fields: [hotelId], references: [id])
+  bookings Booking[]
+}
+
+// Restaurant and Table Booking
+model Restaurant {
+  id       Int       @id @default(autoincrement())
+  name     String
+  location String
+  image    String?
+  seats    Int?
+  cuisine  String
+  ratings  Int       @default(0)
+  bookings Booking[]
+}
+
+model Booking {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  roomId       Int?
+  restaurantId Int?
+  partySize    Int?
+  bookingDate  DateTime
+  timeSlot     String?
+  totalPrice   Float
+  status       BookingStatus @default(PENDING)
+  user         User          @relation(fields: [userId], references: [id])
+  room         Room?         @relation(fields: [roomId], references: [id])
+  restaurant   Restaurant?   @relation(fields: [restaurantId], references: [id])
+}
