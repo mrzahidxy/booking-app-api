@@ -9,7 +9,7 @@ import {
   searchRestaurants,
   updateBookingStatus,
   updateRestaurant,
-} from "../contrrollers/restaurant";
+} from "../controllers/restaurant";
 import { authMiddleware } from "../middleware/auth";
 import multer from "multer";
 import { storage } from "../config/cloudinary";

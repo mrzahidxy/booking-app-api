@@ -3,8 +3,17 @@ import { errorHandler } from "../exceptions/error-handler";
 import multer from "multer";
 import { storage } from "../config/cloudinary";
 import { adminMiddleWare } from "../middleware/admin";
-import { bookRoom, createHotel, createRoom, getHotelDetails, getHotels, searchHotels, updateHotel } from "../contrrollers/hotel";
+import {
+  bookRoom,
+  createHotel,
+  createRoom,
+  getHotelDetails,
+  getHotels,
+  searchHotels,
+  updateHotel,
+} from "../controllers/hotel";
 import { authMiddleware } from "../middleware/auth";
+import checkPermission from "../middleware/role-based-access-control";
 
 export const hotelRoutes: Router = Router();
 
@@ -13,10 +22,11 @@ const upload = multer({ storage: storage });
 hotelRoutes.post(
   "/",
   authMiddleware,
-  adminMiddleWare,
+  checkPermission("CREATE_BOOKING"),
   upload.single("image"),
   errorHandler(createHotel)
 );
+
 hotelRoutes.put(
   "/:id",
   authMiddleware,
@@ -25,9 +35,14 @@ hotelRoutes.put(
   errorHandler(updateHotel)
 );
 
-hotelRoutes.get("/", errorHandler(getHotels))
-hotelRoutes.get("/:id", errorHandler(getHotelDetails))
-hotelRoutes.post('/:id/rooms', authMiddleware, adminMiddleWare, upload.single('image'), errorHandler(createRoom))
-hotelRoutes.get("/search/result", searchHotels)
-hotelRoutes.post('/book-room',authMiddleware, bookRoom)
-
+hotelRoutes.get("/", errorHandler(getHotels));
+hotelRoutes.get("/:id", errorHandler(getHotelDetails));
+hotelRoutes.post(
+  "/:id/rooms",
+  authMiddleware,
+  adminMiddleWare,
+  upload.single("image"),
+  errorHandler(createRoom)
+);
+hotelRoutes.get("/search/result", searchHotels);
+hotelRoutes.post("/book-room", authMiddleware, bookRoom);

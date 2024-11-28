@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { login } from "./../contrrollers/auth";
-import { signup } from "../contrrollers/auth";
+import { login } from "./../controllers/auth";
+import { signup } from "../controllers/auth";
 import { errorHandler } from "../exceptions/error-handler";
 
 const authRoutes: Router = Router();
