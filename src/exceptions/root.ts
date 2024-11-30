@@ -1,5 +1,4 @@
 // message, status code, error codes, error
-
 export class HTTPException extends Error {
   message: string;
   errorCode: ErrorCode;
@@ -22,21 +21,18 @@ export class HTTPException extends Error {
 
 export enum ErrorCode {
   USER_NOT_FOUND = 1001,
-  USER_ALREADY_EXISTS = 1002,  // Typo fixed from EXITS to EXISTS
-  INCORRECT_PASSWORD = 1003,
-  ADDRESS_NOT_FOUND = 1004,    // Avoided conflict with USER_NOT_FOUND
-  
-  PRODUCT_NOT_FOUND = 2001,
-  
-  CART_NOT_FOUND = 2002,       // Fixed leading zero in 001
+  USER_ALREADY_EXISTS = 1002,
+  ROLE_ALREADY_EXISTS = 1003,
+  ROLE_NOT_FOUND = 1004,
+  INCORRECT_PASSWORD = 1006,
+  ADDRESS_NOT_FOUND = 1005,
 
-  ORDER_NOT_FOUND = 2003,
-  
+
+
   INTERNAL_EXCEPTION = 3001,
-  
+
   NO_TOKEN_PROVIDED = 4001,
-  NO_AUTHORIZED = 4002,        // Fixed typo from AUTRHORIZED to AUTHORIZED
-  
+  NO_AUTHORIZED = 4002,
   UNPROCESSABLE_ENTITY = 5001,
 
   RESTAURANT_NOT_FOUND = 6001,
@@ -44,4 +40,6 @@ export enum ErrorCode {
   NOT_ENOUGH_SEATS = 6003,
   HOTEL_NOT_FOUND = 6004,
   ROOM_NOT_FOUND = 6005,
+
+  BAD_REQUEST = 7001,
 }

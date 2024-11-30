@@ -1,11 +1,34 @@
+import { asyncHandler } from "./../exceptions/async-handler";
 import { Router } from "express";
-import { createPermission, createRole, createRoleAssignment, createRolePermission } from "../controllers/role-base-access-control";
-
+import {
+  assignRolePermission,
+  assignUserRole,
+  createPermission,
+  createRole,
+} from "../controllers/role-base-access-control";
+import checkPermission from "../middleware/role-based-access-control";
+import { authMiddleware } from "../middleware/auth";
 
 export const roleMenuPermissionRoutes: Router = Router();
 
+roleMenuPermissionRoutes.post("/roles", [
+  authMiddleware,
+  checkPermission("CREATE_ROLE"),
+  asyncHandler(createRole),
+]);
+roleMenuPermissionRoutes.post("/permissions", [
+  authMiddleware,
+  checkPermission("CREATE_PERMISSION"),
+  asyncHandler(createPermission),
+]);
 
-roleMenuPermissionRoutes.post('/roles', createRole);
-roleMenuPermissionRoutes.post('/permissions', createPermission);
-roleMenuPermissionRoutes.post('/:roleId/permissions', createRolePermission);
-roleMenuPermissionRoutes.post('/:userId/role', createRoleAssignment);
+roleMenuPermissionRoutes.post("/:roleId/permissions", [
+  authMiddleware,
+  checkPermission("CREATE_PERMISSION"),
+  asyncHandler(assignRolePermission),
+]);
+roleMenuPermissionRoutes.post("/:userId/role", [
+  authMiddleware,
+  checkPermission("ASSIGNMENT_USER_ROLE"),
+  asyncHandler(assignUserRole),
+]);

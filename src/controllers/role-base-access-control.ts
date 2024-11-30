@@ -1,18 +1,32 @@
 import { Request, Response } from "express";
 import prisma from "../connect";
 import { HTTPSuccessResponse } from "../helpers/success-response";
+import { ErrorCode, HTTPException } from "../exceptions/root";
+import { NotFoundException } from "../exceptions/not-found";
+import { BadRequestException } from "../exceptions/bad-request";
 
 // Role Management
 export const createRole = async (req: Request, res: Response) => {
   const { name } = req.body;
 
+  // Check if role already exists
+  const existingRole = await prisma.role.findUnique({
+    where: { name },
+  });
 
-  console.log('name', name);
+  if (existingRole) {
+    throw new HTTPException(
+      "Role already exists",
+      ErrorCode.ROLE_ALREADY_EXISTS,
+      400,
+      null
+    );
+  }
 
   const role = await prisma.role.create({
     data: {
-      name
-    }
+      name,
+    },
   });
 
   const response = new HTTPSuccessResponse(
@@ -26,6 +40,21 @@ export const createRole = async (req: Request, res: Response) => {
 // Permission Management
 export const createPermission = async (req: Request, res: Response) => {
   const { name } = req.body;
+
+  const existingPermission = await prisma.permission.findFirst({
+    where: {
+      name,
+    },
+  });
+
+  if (existingPermission) {
+    throw new HTTPException(
+      "Permission already exists",
+      ErrorCode.ADDRESS_NOT_FOUND,
+      400,
+      null
+    );
+  }
 
   const role = await prisma.permission.create({
     data: {
@@ -42,7 +71,7 @@ export const createPermission = async (req: Request, res: Response) => {
 };
 
 // Role Permission
-export const createRolePermission = async (req: Request, res: Response) => {
+export const assignRolePermission = async (req: Request, res: Response) => {
   const { permissionIds } = req.body;
 
   const role = await prisma.role.findUnique({
@@ -52,7 +81,7 @@ export const createRolePermission = async (req: Request, res: Response) => {
   });
 
   if (!role) {
-    throw new Error("Role not found");
+    throw new NotFoundException("Role not found", ErrorCode.ROLE_NOT_FOUND);
   }
 
   const permissions = await prisma.permission.findMany({
@@ -64,9 +93,27 @@ export const createRolePermission = async (req: Request, res: Response) => {
   });
 
   if (permissions.length !== permissionIds.length) {
-    throw new Error("Permission not found");
+    throw new BadRequestException(
+      "Already permission exists",
+      ErrorCode.ROLE_NOT_FOUND
+    );
   }
 
+  const existingRolePermission = await prisma.rolePermission.findMany({
+    where: {
+      roleId: role.id,
+      permissionId: {
+        in: permissionIds,
+      },
+    },
+  });
+
+  if (existingRolePermission.length > 0) {
+    throw new BadRequestException(
+      "Already permission exists",
+      ErrorCode.ROLE_NOT_FOUND
+    );
+  }
   const rolePermission = await prisma.rolePermission.createMany({
     data: permissionIds.map((permissionId: number) => ({
       roleId: role.id,
@@ -83,9 +130,30 @@ export const createRolePermission = async (req: Request, res: Response) => {
 };
 
 // Role Assignment
-export const createRoleAssignment = async (req: Request, res: Response) => {
+export const assignUserRole = async (req: Request, res: Response) => {
   const { userId } = req.params;
-  const {  roleId } = req.body;
+  const { roleId } = req.body;
+
+  // Check if user and role exist
+  const user = await prisma.user.findUnique({
+    where: {
+      id: +userId,
+    },
+  });
+
+  if (!user) {
+    throw new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND);
+  }
+
+  const role = await prisma.role.findUnique({
+    where: {
+      id: +roleId,
+    },
+  });
+
+  if (!role) {
+    throw new NotFoundException("Role not found", ErrorCode.ROLE_NOT_FOUND);
+  }
 
   const existingRoleAssignment = await prisma.userRole.findFirst({
     where: {
@@ -95,13 +163,16 @@ export const createRoleAssignment = async (req: Request, res: Response) => {
   });
 
   if (existingRoleAssignment) {
-    throw new Error("Role already assigned to user");
+    throw new BadRequestException(
+      "Role already assigned to user",
+      ErrorCode.BAD_REQUEST
+    );
   }
 
   const newRoleAssignment = await prisma.userRole.create({
     data: {
-      userId: +userId,
-      roleId: +roleId,
+      userId: user.id,
+      roleId: role.id,
     },
   });
 

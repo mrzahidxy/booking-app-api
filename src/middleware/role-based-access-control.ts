@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../connect";
-
+import { UnauthorizedException } from "../exceptions/unauthorized";
 
 // Middleware to check permissions
 const checkPermission = (givenPermissions: string) => {
@@ -32,19 +32,17 @@ const checkPermission = (givenPermissions: string) => {
       (rolePermission) => rolePermission.permission.name
     );
 
-    console.log(givenPermissions, permissions);
-
     // Check if the required permission exists
-    const hasPermission = 
-      permissions?.includes(givenPermissions)
-    
-
-    console.log('hasPermission', hasPermission)
+    const hasPermission = permissions?.includes(givenPermissions);
 
     if (!hasPermission) {
-      return res.status(403).json({ error: "Access denied" });
+      return next(
+        new UnauthorizedException(
+          "You don't have permission to access this resource",
+          403
+        )
+      );
     }
-
     next();
   };
 };

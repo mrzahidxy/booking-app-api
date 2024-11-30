@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { errorHandler } from "../exceptions/error-handler";
+import { asyncHandler } from "../exceptions/async-handler";
 import {
   checkTableAvailability,
   createRestaurant,
@@ -18,38 +18,38 @@ import { adminMiddleWare } from "../middleware/admin";
 const upload = multer({ storage: storage });
 const restaurantRoutes: Router = Router();
 
-restaurantRoutes.get("/", errorHandler(getAllRestaurants));
-restaurantRoutes.get("/search", errorHandler(searchRestaurants));
-restaurantRoutes.get("/:id", errorHandler(getRestaurantDetails));
+restaurantRoutes.get("/", asyncHandler(getAllRestaurants));
+restaurantRoutes.get("/search", asyncHandler(searchRestaurants));
+restaurantRoutes.get("/:id", asyncHandler(getRestaurantDetails));
 restaurantRoutes.post(
   "/",
   authMiddleware,
   adminMiddleWare,
   upload.single("image"),
-  errorHandler(createRestaurant)
+  asyncHandler(createRestaurant)
 );
 restaurantRoutes.put(
   "/:id",
   authMiddleware,
   adminMiddleWare,
   upload.single("image"),
-  errorHandler(updateRestaurant)
+  asyncHandler(updateRestaurant)
 );
 restaurantRoutes.post(
   "/reservation",
   authMiddleware,
-  errorHandler(reserveTable)
+  asyncHandler(reserveTable)
 );
 restaurantRoutes.post(
   "/reservation/:id",
   authMiddleware,
-  errorHandler(updateBookingStatus)
+  asyncHandler(updateBookingStatus)
 );
 
 restaurantRoutes.get(
   "/reservation/check",
   authMiddleware,
-  errorHandler(checkTableAvailability)
+  asyncHandler(checkTableAvailability)
 );
 
 export default restaurantRoutes;

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { errorHandler } from "../exceptions/error-handler";
+import { asyncHandler } from "../exceptions/async-handler";
 import multer from "multer";
 import { storage } from "../config/cloudinary";
 import { adminMiddleWare } from "../middleware/admin";
@@ -24,7 +24,7 @@ hotelRoutes.post(
   authMiddleware,
   checkPermission("CREATE_BOOKING"),
   upload.single("image"),
-  errorHandler(createHotel)
+  asyncHandler(createHotel)
 );
 
 hotelRoutes.put(
@@ -32,17 +32,17 @@ hotelRoutes.put(
   authMiddleware,
   adminMiddleWare,
   upload.single("image"),
-  errorHandler(updateHotel)
+  asyncHandler(updateHotel)
 );
 
-hotelRoutes.get("/", errorHandler(getHotels));
-hotelRoutes.get("/:id", errorHandler(getHotelDetails));
+hotelRoutes.get("/", asyncHandler(getHotels));
+hotelRoutes.get("/:id", asyncHandler(getHotelDetails));
 hotelRoutes.post(
   "/:id/rooms",
   authMiddleware,
   adminMiddleWare,
   upload.single("image"),
-  errorHandler(createRoom)
+  asyncHandler(createRoom)
 );
 hotelRoutes.get("/search/result", searchHotels);
 hotelRoutes.post("/book-room", authMiddleware, bookRoom);
