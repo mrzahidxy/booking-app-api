@@ -1,16 +1,14 @@
 // prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
+import prisma  from '../src/connect';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
 
 async function main() {
   // Define permissions
   const permissions = [
-    { name: 'CREATE_MENU' },
     { name: 'CREATE_ROLE' },
     { name: 'CREATE_PERMISSION' },
-    { name: 'CREATE_ROLEASSIGNMENT' },
+    { name: 'ASSIGN_PERMISSION' },
+    { name: 'ASSIGN_ROLE' },
   ];
 
   // Upsert Permissions
@@ -59,9 +57,11 @@ async function main() {
       data: {
         email: adminEmail,
         password: hashedPassword,
-        UserRoles: { create: { role: { connect: { name: 'Admin' } } },
-      },
-    }});
+        UserRoles: {
+          create: { role: { connect: { name: 'Admin' } } },
+        },
+      }
+    });
 
     console.log('Admin user created:', newAdmin.email);
   } else {
