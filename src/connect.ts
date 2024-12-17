@@ -1,31 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 
-const prismaClientSingleton = () => {
-  return new PrismaClient().$extends({
-    result: {
-      address: {
-        formattedAddress: {
-          needs: {
-            country: true,
-            state: true,
-            city: true,
-            postalCode: true,
-          },
-          compute: (address: any) => {
-            return `${address?.city}, ${address?.state}, ${address?.country}, ${address?.postalCode}`;
-          },
-        },
-      },
-    },
-  });
-};
-
 declare global {
-  var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>;
+  // Declare a global variable to store the Prisma client instance
+  var prismaGlobal: PrismaClient | undefined;
 }
 
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+// Create a Prisma client singleton
+const prisma = globalThis.prismaGlobal ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== "production") {
+  globalThis.prismaGlobal = prisma; // Cache the instance globally in development
+}
 
 export default prisma;
-
-if (process.env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;

@@ -1,4 +1,4 @@
-import { asyncHandler } from "./../exceptions/async-handler";
+import { asyncHandler } from "../exceptions/async-handler";
 import { Router } from "express";
 import {
   assignRolePermission,
@@ -6,7 +6,7 @@ import {
   createPermission,
   createRole,
 } from "../controllers/role-base-access-control";
-import checkPermission from "../middleware/role-based-access-control";
+import checkPermission from "../middleware/check-permission";
 import { authMiddleware } from "../middleware/auth";
 
 export const roleMenuPermissionRoutes: Router = Router();

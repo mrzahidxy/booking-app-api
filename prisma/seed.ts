@@ -5,10 +5,18 @@ import bcrypt from 'bcrypt';
 async function main() {
   // Define permissions
   const permissions = [
-    { name: 'CREATE_ROLE' },
-    { name: 'CREATE_PERMISSION' },
-    { name: 'ASSIGN_PERMISSION' },
-    { name: 'ASSIGN_ROLE' },
+    { name: "CREATE_ROLE" },
+    { name: "UPDATE_ROLE" },
+    { name: "GET_ROLE" },
+    { name: "DELETE_ROLE" },
+    { name: "CREATE_PERMISSION" },
+    { name: "UPDATE_PERMISSION" },
+    { name: "GET_PERMISSION" },
+    { name: "DELETE_PERMISSION" },
+    { name: "ASSIGN_PERMISSION" },
+    { name: "UPDATE_ASSIGN_PERMISSION" },
+    { name: "ASSIGN_ROLE" },
+    { name: "UPDATE_ASSIGN_ROLE" },
   ];
 
   // Upsert Permissions
