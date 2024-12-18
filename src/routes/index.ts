@@ -2,7 +2,7 @@ import { Router } from "express";
 import authRoutes from "./auth";
 import restaurantRoutes from "./restaurant";
 import { hotelRoutes } from "./hotel";
-import { roleMenuPermissionRoutes } from "./role-based-access-control";
+import { roleMenuPermissionRoutes } from "./role-permission";
 
 
 const rootRouter: Router = Router();

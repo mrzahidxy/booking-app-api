@@ -1,18 +1,15 @@
 DO $$
-
--- DECLARE
---     table_name TEXT := 'your_table_name'; -- Specify your table name here
--- BEGIN
---     EXECUTE 'TRUNCATE TABLE "' || table_name || '" RESTART IDENTITY CASCADE;';
-
 DECLARE
-    table_name TEXT;
+    table_name TEXT; -- Variable to hold the name of each table in the loop
 BEGIN
+    -- Loop through all table names in the 'public' schema
     FOR table_name IN
         SELECT tablename
         FROM pg_tables
         WHERE schemaname = 'public'
     LOOP
-        EXECUTE 'TRUNCATE TABLE "' || table_name || '" RESTART IDENTITY CASCADE;';
+        -- Dynamically truncate each table, restart identity, and cascade
+        EXECUTE format('TRUNCATE TABLE %I RESTART IDENTITY CASCADE;', table_name);
     END LOOP;
 END $$;
+

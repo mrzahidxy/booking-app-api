@@ -65,10 +65,12 @@ async function main() {
       data: {
         email: adminEmail,
         password: hashedPassword,
-        UserRoles: {
-          create: { role: { connect: { name: 'Admin' } } },
+        Role: {
+          connect: {
+            id: adminRole.id,
+          },
         },
-      }
+      },
     });
 
     console.log('Admin user created:', newAdmin.email);

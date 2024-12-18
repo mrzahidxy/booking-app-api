@@ -22,12 +22,15 @@ const checkPermission = (requiredPermission: string) => {
             RolePermission: {
               some: {
                 role: {
-                  UserRole: { some: { userId } },
+                  Users: {
+                    some: {
+                      id: userId,
+                    },
+                  },
                 },
               },
             },
           },
-          select: { name: true },
         });
         req.userPermissions = userPermissions.map((p) => p.name);
       }

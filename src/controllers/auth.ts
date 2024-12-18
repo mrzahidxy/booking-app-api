@@ -50,9 +50,22 @@ export const login = async (
 ) => {
   const { email, password } = req.body;
 
-  let user = await prisma.user.findFirst({
+  let user = await prisma.user.findUnique({
     where: { email },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      phone: true,
+      password: true,
+      Role: {
+        select: {
+          name: true,
+        },
+      },
+    },
   });
+  
 
   if (!user) {
     return next(
@@ -68,28 +81,13 @@ export const login = async (
 
   const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "1d" });
 
-  const { password: userPassword, ...rest } = user;
+  const { password: userPassword, Role, ...rest } = user;
 
   const response = new HTTPSuccessResponse("Login successfully", 201, {
     ...rest,
+    role: Role?.name,
     token,
   });
   res.status(response.statusCode).json(response);
 };
 
-export const me = async (req: Request, res: Response, next: NextFunction) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.user?.id },
-  });
-
-  const { password, ...rest } = user?.password
-    ? user
-    : { password: null, ...user };
-
-  const response = new HTTPSuccessResponse(
-    "User fetched successfully",
-    200,
-    rest
-  );
-  res.status(response.statusCode).json(response);
-};
