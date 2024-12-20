@@ -73,7 +73,7 @@ export const login = async (
     );
   }
 
-  if (!compareSync(password, user.password!)) {
+  if (!compareSync(password, user.password)) {
     return next(
       new BadRequestException("Wrong password", ErrorCode.INCORRECT_PASSWORD)
     );
