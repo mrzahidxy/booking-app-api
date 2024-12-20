@@ -3,7 +3,7 @@ import prisma  from '../src/connect';
 import bcrypt from 'bcrypt';
 
 async function main() {
-  // Define permissions
+  // Add/Update few initial permissions on DB
   const permissions = [
     { name: "CREATE_ROLE" },
     { name: "UPDATE_ROLE" },
@@ -38,7 +38,7 @@ async function main() {
     create: { name: 'Admin' },
   });
 
-  // Assign all permissions to Admin
+  // Payload for RolePermissions
   const adminRolePermissions = allPermissions.map((perm) => ({
     roleId: adminRole.id,
     permissionId: perm.id,
