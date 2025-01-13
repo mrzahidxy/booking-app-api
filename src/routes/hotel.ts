@@ -6,14 +6,15 @@ import { adminMiddleWare } from "../middleware/admin";
 import {
   bookRoom,
   createHotel,
-  createRoom,
   getHotelDetails,
   getHotels,
+  saveRoom,
   searchHotels,
   updateHotel,
 } from "../controllers/hotel";
 import { authMiddleware } from "../middleware/auth";
-import checkPermission from "../middleware/role-based-access-control";
+import checkPermission from "../middleware/check-permission";
+
 
 export const hotelRoutes: Router = Router();
 
@@ -22,7 +23,6 @@ const upload = multer({ storage: storage });
 hotelRoutes.post(
   "/",
   authMiddleware,
-  checkPermission("CREATE_BOOKING"),
   upload.single("image"),
   asyncHandler(createHotel)
 );
@@ -37,12 +37,13 @@ hotelRoutes.put(
 
 hotelRoutes.get("/", asyncHandler(getHotels));
 hotelRoutes.get("/:id", asyncHandler(getHotelDetails));
+hotelRoutes.get("/search/result", searchHotels);
+hotelRoutes.post("/book-room", authMiddleware, bookRoom);
+
+
 hotelRoutes.post(
   "/:id/rooms",
   authMiddleware,
-  adminMiddleWare,
   upload.single("image"),
-  asyncHandler(createRoom)
+  asyncHandler(saveRoom)
 );
-hotelRoutes.get("/search/result", searchHotels);
-hotelRoutes.post("/book-room", authMiddleware, bookRoom);

@@ -43,6 +43,7 @@ export const roomSchema = z.object({
   }),
   price: z.string().min(1, { message: "Price is required" }),
   image: z.string().min(1, { message: "Image is required" }),
+  roomId: z.number().optional(),
 });
 
 export const roomBookingSchema = z.object({

@@ -18,9 +18,12 @@ export const createHotel = async (req: Request, res: Response) => {
     ...req.body,
     image: req.file?.path,
   });
-  handleValidationError(res, validateResult);
 
-  const { name, location } = validateResult.data!;
+  if (!validateResult.success) {
+    return handleValidationError(res, validateResult);
+  }
+
+  const { name, location } = validateResult.data;
   const imageUrl = req.file ? req.file.path : null;
 
   const hotel = await prisma.hotel.create({
@@ -31,7 +34,13 @@ export const createHotel = async (req: Request, res: Response) => {
     },
   });
 
-  res.json(new HTTPSuccessResponse("Hotel created successfully", 201, hotel));
+  const response = new HTTPSuccessResponse(
+    "Hotel created successfully",
+    201,
+    hotel
+  );
+
+  res.status(response.statusCode).json(response);
 };
 
 export const updateHotel = async (req: Request, res: Response) => {
@@ -97,13 +106,20 @@ export const getHotelDetails = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 };
 
-export const createRoom = async (req: Request, res: Response) => {
+export const saveRoom = async (req: Request, res: Response) => {
+
+  console.log("Hiitted")
   const validateResult = roomSchema.safeParse({
     ...req.body,
     image: req.file?.path,
   });
+
+  if (!validateResult.success) {
+    return handleValidationError(res, validateResult);
+  }
+
   const hotelId = +req.params.id;
-  const { roomType, price, image } = validateResult.data!;
+  const { roomId, roomType, price, image } = validateResult.data;
 
   const roomData = {
     hotelId,
@@ -125,64 +141,14 @@ export const createRoom = async (req: Request, res: Response) => {
     );
   }
 
-  // Create the room under the hotel
-  const newRoom = await prisma.room.create({
-    data: roomData,
-  });
-
-  res.json(new HTTPSuccessResponse("Hotel created successfully", 201, newRoom));
-};
-
-export const updateRoom = async (req: Request, res: Response) => {
-  const hotelId = +req.params.id;
-  const { roomId, roomType, price } = req.body;
-
-  const roomData = {
-    hotelId,
-    roomType,
-    price: +price,
-    image: req.file ? req.file.path : null,
-  };
-
-  try {
-    // Check if the hotel exists
-    const existingHotel = await prisma.hotel.findUnique({
-      where: { id: hotelId },
-    });
-
-    if (!existingHotel) {
-      throw new InternalException(
-        "Hotel not found",
-        "",
-        ErrorCode.HOTEL_NOT_FOUND
-      );
-    }
-
-    const existingRoom = await prisma.room.findUnique({
-      where: { id: roomId },
-    });
-
-    if (!existingRoom) {
-      throw new InternalException(
-        "Room not found",
-        "",
-        ErrorCode.ROOM_NOT_FOUND
-      );
-    }
-
-    // Create the room under the hotel
-    const updatedRoom = await prisma.room.update({
-      where: { id: roomId },
+  // Save the room under the hotel
+  const saveRoom = roomId
+    ? await prisma.room.update({ where: { id: roomId }, data: roomData })
+    : await prisma.room.create({
       data: roomData,
     });
 
-    res.json(
-      new HTTPSuccessResponse("Updated room successfully", 201, updatedRoom)
-    );
-  } catch (error) {
-    console.error("Error creating room:", error);
-    throw error;
-  }
+  res.json(new HTTPSuccessResponse("Hotel created successfully", 201, saveRoom));
 };
 
 // Search Hotels by Location, Room Type, and Price Range
@@ -190,14 +156,12 @@ export const searchHotels = async (req: Request, res: Response) => {
   const { location, minPrice, maxPrice, roomType } = req.query;
   const hotels = await prisma.hotel.findMany({
     where: {
-      location: location as string,
+      ...(location && { location: location as string }),
       rooms: {
         some: {
-          price: {
-            gte: minPrice ? +minPrice : undefined,
-            lte: maxPrice ? +maxPrice : undefined,
-          },
-          roomType: { equals: roomType as RoomType },
+          ...(minPrice && { price: { gte: +minPrice } }),
+          ...(maxPrice && { price: { lte: +maxPrice } }),
+          ...(roomType && { roomType: roomType as RoomType }),
         },
       },
     },

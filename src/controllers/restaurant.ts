@@ -6,15 +6,16 @@ import { ErrorCode } from "../exceptions/root";
 import { InternalException } from "../exceptions/internal-exception";
 import { reservationSchema, updateStatusSchema } from "../schema/booking";
 import { BadRequestException } from "../exceptions/bad-request";
+import { handleValidationError } from "../utils/common-method";
 
 export const createRestaurant = async (req: Request, res: Response) => {
-  const { name, location, cuisine, seats } = req.body;
+  const { name, location, cuisine, seats, menu } = req.body;
   try {
     // Check if an image file was uploaded
     const imageUrl = req.file ? req.file.path : null;
 
     const restaurant = await prisma.restaurant.create({
-      data: { name, location, cuisine, image: imageUrl, seats },
+      data: { name, location, cuisine, image: imageUrl, seats: +seats, menu },
     });
     res.json(
       new HTTPSuccessResponse(
@@ -34,164 +35,112 @@ export const createRestaurant = async (req: Request, res: Response) => {
 
 export const updateRestaurant = async (req: Request, res: Response) => {
   const restaurantId = +req.params.id;
-  const { name, location, cuisine, seats } = req.body;
-  const seatsInt = Number(seats);
-  console.log(seats);
-  try {
-    // Check if an image file was uploaded
-    const imageUrl = req.file ? req.file.path : null;
+  const { name, location, cuisine, seats, menu } = req.body;
+  // Check if an image file was uploaded
+  const imageUrl = req.file ? req.file.path : null;
 
-    const restaurantData: {
-      name?: string;
-      location?: string;
-      cuisine?: string;
-      seats?: number;
-      image?: string;
-    } = {
-      name,
-      location,
-      cuisine,
-      seats: seatsInt,
-    };
+  // Build update data dynamically to only include provided fields
+  const restaurantData: Record<string, any> = {};
 
-    // Only add `image` if `imageUrl` is provided
-    if (imageUrl) {
-      restaurantData.image = imageUrl;
-    }
+  if (name) restaurantData.name = name;
+  if (location) restaurantData.location = location;
+  if (cuisine) restaurantData.cuisine = cuisine;
+  if (seats) restaurantData.seats = +seats; // Convert seats to a number
+  if (menu) restaurantData.menu = menu;
+  if (imageUrl) restaurantData.image = imageUrl;
 
-    const restaurant = await prisma.restaurant.update({
-      where: { id: restaurantId },
-      data: restaurantData,
-    });
+  const restaurant = await prisma.restaurant.update({
+    where: { id: restaurantId },
+    data: restaurantData,
+  });
 
-    res.json(
-      new HTTPSuccessResponse(
-        "Restaurant updated successfully",
-        200,
-        restaurant
-      )
-    );
-  } catch (error) {
-    console.log(error);
-    throw new NotFoundException(
-      "Restaurant not found",
-      ErrorCode.RESTAURANT_NOT_FOUND
-    );
-  }
+  res.json(
+    new HTTPSuccessResponse("Restaurant updated successfully", 200, restaurant)
+  );
 };
 
 export const getAllRestaurants = async (req: Request, res: Response) => {
-  try {
-    const restaurants = await prisma.restaurant.findMany({
-      include: { bookings: true },
-    });
-    res.json(
-      new HTTPSuccessResponse(
-        "Restaurants fetched successfully",
-        200,
-        restaurants
-      )
-    );
-  } catch (error) {
-    throw new InternalException(
-      "Something went wrong",
-      error,
-      ErrorCode.INTERNAL_EXCEPTION
-    );
-  }
+  const { page = 1, limit = 10 } = req.query;
+
+  const restaurants = await prisma.restaurant.findMany({
+    skip: (+page - 1) * +limit,
+    take: +limit,
+    include: { bookings: true },
+  });
+  res.json(
+    new HTTPSuccessResponse(
+      "Restaurants fetched successfully",
+      200,
+      restaurants
+    )
+  );
 };
 
 // // Search Restaurants by Cuisine, Location, Price Range, and Availability
 export const searchRestaurants = async (req: Request, res: Response) => {
   const { name, location, ratings, cuisine } = req.query;
+  // Fetch restaurants with the constructed filters
+  const restaurants = await prisma.restaurant.findMany({
+    where: {
+      ...(location && {
+        location: {
+          contains: location as string,
+          mode: "insensitive",
+        },
+      }),
+      ...(cuisine && {
+        cuisine: {
+          contains: cuisine as string,
+          mode: "insensitive",
+        },
+      }),
+      ...(ratings && {
+        ratings: +ratings,
+      }),
+      ...(name && {
+        name: {
+          contains: name as string,
+          mode: "insensitive",
+        },
+      }),
+    },
+    include: {
+      bookings: true, // Include bookings
+    },
+  });
 
-  try {
-    // Prepare filters dynamically to avoid null or undefined values in query
-    const filters: any = {};
-
-    if (name) {
-      filters.name = {
-        contains: name as string,
-        mode: "insensitive",
-      };
-    }
-
-    if (location) {
-      filters.location = {
-        contains: location as string,
-        mode: "insensitive",
-      };
-    }
-
-    if (cuisine) {
-      filters.cuisine = {
-        contains: cuisine as string,
-        mode: "insensitive",
-      };
-    }
-
-    if (ratings) {
-      filters.ratings = Number(ratings);
-    }
-
-    // Fetch restaurants with the constructed filters
-    const restaurants = await prisma.restaurant.findMany({
-      where: filters,
-      include: {
-        bookings: true, // Include bookings to check availability
-      },
-    });
-
-    // Send success response
-    const response = new HTTPSuccessResponse(
-      "Restaurants fetched successfully",
-      200,
-      restaurants
-    );
-    return res.status(response.statusCode).json(response);
-  } catch (error) {
-    // Improved error handling with a detailed message
-    const internalError = new InternalException(
-      "Failed to fetch restaurants",
-      error,
-      ErrorCode.INTERNAL_EXCEPTION
-    );
-    return res.status(internalError.statusCode).json(internalError);
-  }
+  // Send success response
+  const response = new HTTPSuccessResponse(
+    "Restaurants fetched successfully",
+    200,
+    restaurants
+  );
+  return res.status(response.statusCode).json(response);
 };
 
-// // Get Detailed Restaurant Information including Menu, Photos, and Reviews
+// // Get Detailed Restaurant Information
 export const getRestaurantDetails = async (req: Request, res: Response) => {
   const restaurantId = +req.params.id;
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    include: {
+      bookings: true,
+    },
+  });
 
-  try {
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { id: restaurantId },
-      include: {
-        bookings: true,
-      },
-    });
-
-    if (!restaurant) {
-      throw new NotFoundException(
-        "Restaurant not found",
-        ErrorCode.RESTAURANT_NOT_FOUND
-      );
-    }
-
-    const response = new HTTPSuccessResponse(
-      "Restaurant details fetched successfully",
-      200,
-      restaurant
-    );
-    res.status(response.statusCode).json(response);
-  } catch (error) {
-    throw new InternalException(
-      "Something went wrong",
-      error,
-      ErrorCode.INTERNAL_EXCEPTION
+  if (!restaurant) {
+    throw new NotFoundException(
+      "Restaurant not found",
+      ErrorCode.RESTAURANT_NOT_FOUND
     );
   }
+
+  const response = new HTTPSuccessResponse(
+    "Restaurant details fetched successfully",
+    200,
+    restaurant
+  );
+  res.status(response.statusCode).json(response);
 };
 
 // Check table availability for a restaurant
@@ -199,89 +148,67 @@ export const checkTableAvailability = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  // Extract query parameters with type assertion
-  const { restaurantId, date, timeSlot, partySize } = req.query as {
+  // Extract query parameters
+  const { restaurantId, date, partySize } = req.query as {
     restaurantId: string;
     date: string;
     timeSlot: string;
     partySize?: string; // Optional
   };
+  // Fetch restaurant details to get seating capacity
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: +restaurantId },
+    select: { seats: true },
+  });
 
-  try {
-    // Fetch restaurant details to get seating capacity
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { id: Number(restaurantId) },
-      select: { seats: true }, 
-    });
-
-    // Handle case where restaurant is not found
-    if (!restaurant) {
-      return res.status(404).json({ error: "Restaurant not found" });
-    }
-
-    // Fetch confirmed bookings for the specified restaurant, date, and time slot
-    const availability = await prisma.booking.findMany({
-      where: {
-        restaurantId: Number(restaurantId), 
-        bookingDate: new Date(date),
-        status: "CONFIRMED",
-        // timeSlot,
-      },
-    });
-
-    // Calculate availability based on existing bookings and requested party size
-    const totalBookedSeats = availability.reduce(
-      (total, booking) => total + (booking.partySize ?? 0),
-      0
-    );
-
-    const requestedPartySize = partySize ? Number(partySize) : 1; // Default to 1 if partySize is not provided
-    const isAvailable =
-      totalBookedSeats + requestedPartySize <= restaurant.seats!; // Assume restaurant.seats is accessible
-    const availAbality = restaurant.seats! - totalBookedSeats;
-    // Construct success response
-    const response = new HTTPSuccessResponse(
-      "Table availability checked successfully",
-      200,
-      { isAvailable, availAbality: availAbality }
-    );
-
-    return res.status(response.statusCode).json(response);
-  } catch (error) {
-    console.error("Availability Check Error:", error); // Log the error for debugging
-
-    // Handle unexpected errors
-    throw new InternalException(
-      "Failed to check table availability",
-      error,
-      ErrorCode.INTERNAL_EXCEPTION
-    );
+  if (!restaurant) {
+    return res.status(404).json({ error: "Restaurant not found" });
   }
+
+  // Fetch confirmed bookings for the specified restaurant
+  const availability = await prisma.booking.findMany({
+    where: {
+      restaurantId: +restaurantId,
+      bookingDate: new Date(date),
+      status: "CONFIRMED",
+    },
+  });
+
+  // Calculate availability based on existing bookings and requested party size
+  const totalBookedSeats = availability.reduce(
+    (total, booking) => total + (booking.partySize ?? 0),
+    0
+  );
+
+  const requestedPartySize = partySize ? Number(partySize) : 1;
+
+  const isAvailable =
+    totalBookedSeats + requestedPartySize <= restaurant.seats!;
+  const availAbality = restaurant.seats! - totalBookedSeats;
+
+  const response = new HTTPSuccessResponse(
+    "Table availability checked successfully",
+    200,
+    { isAvailable, availAbality: availAbality }
+  );
+
+  return res.status(response.statusCode).json(response);
 };
 
 // Reserve a table at a restaurant
-export const reserveTable = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  // Step 1: Validate incoming request body against reservation schema
+export const reserveTable = async (req: Request, res: Response) => {
+  // Validate request data
   const validationResult = reservationSchema.safeParse(req.body);
   if (!validationResult.success) {
-    return res.status(400).json({
-      error: "Invalid data provided",
-      details: validationResult.error.errors.map((err) => ({
-        field: err.path.join("."),
-        message: err.message,
-      })),
-    });
+    return handleValidationError(res, validationResult);
   }
 
-  const { userId, restaurantId, bookingDate, timeSlot, partySize, totalPrice } =
+  const { userId, restaurantId, bookingDate, partySize, totalPrice } =
     validationResult.data;
 
-  try {
-    // Step 2: Fetch restaurant to verify it exists and retrieve available seats
-    const restaurant = await prisma.restaurant.findUnique({
+  const booking = await prisma.$transaction(async (tx) => {
+    // Fetch restaurant details to get seating capacity
+    const restaurant = await tx.restaurant.findUnique({
       where: { id: restaurantId },
       select: { seats: true },
     });
@@ -293,85 +220,59 @@ export const reserveTable = async (
       );
     }
 
-    // Step 3: Fetch confirmed bookings for the specified date and time slot
-    const existingBookings = await prisma.booking.findMany({
+    const seatAvailable = restaurant.seats!;
+    const seatBooked = await tx.booking.aggregate({
       where: {
         restaurantId,
         bookingDate: new Date(bookingDate),
-        timeSlot,
         status: "CONFIRMED",
       },
-      select: { partySize: true },
+      _sum: {
+        partySize: true,
+      },
     });
 
-    // Step 4: Calculate remaining seats based on confirmed bookings
-    const seatsBooked = existingBookings.reduce(
-      (total, booking) => total + (booking.partySize ?? 0),
-      0
-    );
-    const remainingSeats = Math.max((restaurant.seats ?? 0) - seatsBooked, 0);
+    const totalBookedSeats = seatBooked._sum.partySize ?? 0;
+    const requestedPartySize = partySize ?? 1;
+    const isAvailable = totalBookedSeats + requestedPartySize <= seatAvailable;
 
-    // Step 5: Check if there are enough seats for the requested party size
-    if (remainingSeats < partySize) {
+    if (!isAvailable) {
       throw new BadRequestException(
         "Not enough seats available",
         ErrorCode.NOT_ENOUGH_SEATS
       );
     }
 
-    // Step 6: Create a new booking record with a pending status
-    const booking = await prisma.booking.create({
+    return tx.booking.create({
       data: {
         userId,
         restaurantId,
         bookingDate: new Date(bookingDate),
-        timeSlot,
         partySize,
         totalPrice,
         status: "PENDING",
       },
     });
+  });
 
-    // Step 7: Send success response with booking details
-    return res
-      .status(201)
-      .json(
-        new HTTPSuccessResponse("Table reserved successfully", 201, booking)
-      );
-  } catch (error) {
-    console.error("Reservation Error:", error);
-
-    // Step 8: Handle known exceptions, or throw internal error for unexpected ones
-    throw new InternalException(
-      "Failed to reserve table",
-      error,
-      ErrorCode.INTERNAL_EXCEPTION
-    );
-  }
+  return res
+    .status(201)
+    .json(new HTTPSuccessResponse("Table reserved successfully", 201, booking));
 };
 
 // Update booking status
-export const updateBookingStatus = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const updateBookingStatus = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { status } = req.body;
 
-  // Validate request data against the update status schema
+  // Validate request data
   const validationResult = updateStatusSchema.safeParse({
     bookingId: id,
     status,
   });
 
   if (!validationResult.success) {
-    return res.status(400).json({
-      error: "Invalid data provided",
-      details: validationResult.error.errors.map((err) => ({
-        field: err.path.join("."),
-        message: err.message,
-      })),
-    });
+    return handleValidationError(res, validationResult);
   }
 
   const validStatus = validationResult.data.status as
@@ -380,24 +281,64 @@ export const updateBookingStatus = async (
     | "CANCELLED"
     | "COMPLETED";
 
-  try {
-    // Update booking status in database
-    const updatedBooking = await prisma.booking.update({
-      where: { id: Number(id) },
-      data: { status: validStatus },
+  const updatedBooking = await prisma.$transaction(async (tx) => {
+    // Check if booking exists
+    const existingBooking = await prisma.booking.findUnique({
+      where: { id: +id },
     });
 
-    // Send success response
-    return res.status(200).json({
-      message: "Booking status updated successfully",
-      booking: updatedBooking,
+    if (!existingBooking) {
+      return res.status(404).json({
+        message: "Booking not found",
+        errorCode: "BOOKING_NOT_FOUND",
+      });
+    }
+
+    const restaurant = await tx.restaurant.findUnique({
+      where: { id: existingBooking.restaurantId! },
+      select: { seats: true },
     });
-  } catch (error) {
-    console.error("Status Update Error:", error);
-    throw new InternalException(
-      "Failed to update booking status",
-      error,
-      ErrorCode.INTERNAL_EXCEPTION
-    );
-  }
+
+    if (!restaurant) {
+      throw new NotFoundException(
+        "Restaurant not found",
+        ErrorCode.RESTAURANT_NOT_FOUND
+      );
+    }
+
+    const seatAvailable = restaurant.seats!;
+    const seatBooked = await tx.booking.aggregate({
+      where: {
+        restaurantId: existingBooking.restaurantId!,
+        bookingDate: new Date(existingBooking.bookingDate),
+        status: "CONFIRMED",
+      },
+      _sum: {
+        partySize: true,
+      },
+    });
+
+    const totalBookedSeats = seatBooked._sum.partySize ?? 0;
+    const requestedPartySize = existingBooking.partySize ?? 1;
+    const isAvailable = totalBookedSeats + requestedPartySize <= seatAvailable;
+
+    if (!isAvailable) {
+      throw new BadRequestException(
+        "Not enough seats available",
+        ErrorCode.NOT_ENOUGH_SEATS
+      );
+    }
+
+    // Update booking status
+    return tx.booking.update({
+      where: { id: +id },
+      data: { status: validStatus },
+    });
+  });
+
+  // Send success response
+  return res.status(200).json({
+    message: "Booking status updated successfully",
+    booking: updatedBooking,
+  });
 };

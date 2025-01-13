@@ -54,6 +54,9 @@ const checkPermission = (requiredPermission: string) => {
           select: { name: true },
         });
 
+
+        console.log(req.userPermissions)
+
         // Update the cached permissions if the required permission is found
         if (hasPermission) {
           req.userPermissions.add(requiredPermission);

@@ -1,108 +1,84 @@
-// This is your Prisma schema file,
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// Config for supabase connection
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-// Define the booking status enum
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-}
-
-// Room Type
-enum RoomType {
-  SINGLE
-  DOUBLE
-  TWIN
-  TRIPLE
-}
-
-// User Management
 model User {
   id        Int       @id @default(autoincrement())
   email     String    @unique
-  name      String?
   phone     String?
   password  String
-  Role      Role?     @relation(fields: [roleId], references: [id])
-  roleId    Int?
-  bookings  Booking[]
   createdAt DateTime  @default(now())
+  name      String?
+  roleId    Int?
   updateAt  DateTime  @updatedAt
+  bookings  Booking[]
+  Role      Role?     @relation(fields: [roleId], references: [id])
 }
 
-// Role Management
 model Role {
   id             Int              @id @default(autoincrement())
-  name           String           @unique // e.g. 'Admin', 'Moderator'
+  name           String           @unique
   rolePermission RolePermission[]
   Users          User[]
 }
 
-// Permission Management 
 model Permission {
   id             Int              @id @default(autoincrement())
-  name           String           @unique // e.g. 'CREATE_BOOKING', 'DELETE_HOTEL'
+  name           String           @unique
   RolePermission RolePermission[]
 }
 
-// Menu Role Mapping (Many to Many)
 model RolePermission {
   id           Int        @id @default(autoincrement())
   roleId       Int
   permissionId Int
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
 }
 
-// Hotel and Room Booking
 model Hotel {
   id        Int      @id @default(autoincrement())
   name      String
   location  String
   image     String?
-  ratings   Float?   @default(0.0)
-  rooms     Room[]
   createdAt DateTime @default(now())
   updateAt  DateTime @updatedAt
+  ratings   Float?   @default(0.0)
+  rooms     Room[]
 }
 
 model Room {
   id        Int       @id @default(autoincrement())
   hotelId   Int
-  roomType  RoomType  @default(SINGLE)
   price     Float
   image     String?
-  hotel     Hotel     @relation(fields: [hotelId], references: [id])
-  bookings  Booking[]
+  roomType  RoomType  @default(SINGLE)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  bookings  Booking[]
+  hotel     Hotel     @relation(fields: [hotelId], references: [id])
 }
 
-// Restaurant and Table Booking
 model Restaurant {
   id        Int       @id @default(autoincrement())
   name      String
   location  String
   image     String?
-  seats     Int?
   cuisine   String
   ratings   Float     @default(0.0)
-  bookings  Booking[]
+  seats     Int?
+  menu      String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  bookings  Booking[]
 }
 
 model Booking {
@@ -110,14 +86,28 @@ model Booking {
   userId       Int
   roomId       Int?
   restaurantId Int?
-  partySize    Int?
   bookingDate  DateTime
-  timeSlot     String?
   totalPrice   Float
+  partySize    Int?
+  timeSlot     String?
   status       BookingStatus @default(PENDING)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  user         User          @relation(fields: [userId], references: [id])
-  room         Room?         @relation(fields: [roomId], references: [id])
   restaurant   Restaurant?   @relation(fields: [restaurantId], references: [id])
+  room         Room?         @relation(fields: [roomId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum RoomType {
+  SINGLE
+  DOUBLE
+  TWIN
+  TRIPLE
 }
