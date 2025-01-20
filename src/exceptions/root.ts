@@ -42,4 +42,5 @@ export enum ErrorCode {
   ROOM_NOT_FOUND = 6005,
 
   BAD_REQUEST = 7001,
+  REVIEW_NOT_FOUND = 7002,
 }

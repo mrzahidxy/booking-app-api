@@ -13,7 +13,6 @@ import {
 import { authMiddleware } from "../middleware/auth";
 import multer from "multer";
 import { storage } from "../config/cloudinary";
-import { adminMiddleWare } from "../middleware/admin";
 import checkPermission from "../middleware/check-permission";
 
 const upload = multer({ storage: storage });

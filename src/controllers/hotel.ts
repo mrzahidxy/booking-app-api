@@ -91,6 +91,11 @@ export const getHotelDetails = async (req: Request, res: Response) => {
     where: { id: hotelId },
     include: {
       rooms: true,
+      reviews: {
+        include: {
+          user: true,
+        },
+      },
     },
   });
 
