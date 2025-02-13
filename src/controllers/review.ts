@@ -5,19 +5,38 @@ import { ErrorCode } from "../exceptions/root";
 import { NotFoundException } from "../exceptions/not-found";
 
 export const getReviews = async (req: Request, res: Response) => {
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 10, hotelId, restaurantId } = req.query;
 
-  // Fetch all users from the database
+  // Parse pagination parameters
+  const pageNum = Number(page) || 1;
+  const limitNum = Number(limit) || 10;
+
+  // Build the `where` clause dynamically
+  const whereClause: Record<string, any> = {};
+  if (hotelId) whereClause.hotelId = Number(hotelId);
+  if (restaurantId) whereClause.restaurantId = Number(restaurantId);
+
+  console.log("whereClause", whereClause);
+
+  // Fetch reviews from the database
   const reviews = await prisma.review.findMany({
-    skip: (+page - 1) * +limit,
-    take: +limit,
+    skip: (pageNum - 1) * limitNum,
+    take: limitNum,
+    where: whereClause,
+    include: {
+      user: true,
+    }
   });
-  const total = await prisma.user.count();
+
+  // Count total reviews
+  const total = await prisma.review.count({
+    where: whereClause,
+  });
 
   // Send success response
-  const response = new HTTPSuccessResponse("Users fetched successfully", 200, {
-    page: +page,
-    limit: +limit,
+  const response = new HTTPSuccessResponse("Reviews fetched successfully", 200, {
+    page: pageNum,
+    limit: limitNum,
     total,
     data: reviews,
   });
