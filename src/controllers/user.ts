@@ -17,7 +17,7 @@ export const getUsers = async (req: Request, res: Response) => {
     page: +page,
     limit: +limit,
     totalUsers,
-    data: users,
+    collection: users,
   });
   res.status(response.statusCode).json(response);
 };

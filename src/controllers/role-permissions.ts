@@ -4,24 +4,58 @@ import { HTTPSuccessResponse } from "../helpers/success-response";
 import { ErrorCode, HTTPException } from "../exceptions/root";
 import { NotFoundException } from "../exceptions/not-found";
 import { BadRequestException } from "../exceptions/bad-request";
+import { formatPaginationResponse } from "../utils/common-method";
 
 
 
 // Role Management
 export const getRoles = async (req: Request, res: Response) => {
-  const role = await prisma.role.findMany();
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+  // Fetch roles with pagination
+  const roles = await prisma.role.findMany({ skip, take: limit });
+  const totalRoles = await prisma.role.count();
+
+  if (!roles || roles.length === 0) {
+    throw new NotFoundException("No roles found", ErrorCode.ROLE_NOT_FOUND);
+  }
+
+  const formattedResponse = formatPaginationResponse(roles, totalRoles, page, limit);
 
   const response = new HTTPSuccessResponse(
-    "Role created successfully",
-    201,
-    role
+    "Roles fetched successfully",
+    200,
+    formattedResponse
   );
-  res.status(response.statusCode).json(response);
+  return res.status(response.statusCode).json(response);
+
+};
+
+export const getRoleById = async (req: Request, res: Response) => {
+  const { roleId } = req.params;
+
+  const role = await prisma.role.findUnique({
+    where: {
+      id: +roleId,
+    },
+  });
+
+  console.log("role", role);
 
   if (!role) {
     throw new NotFoundException("Role not found", ErrorCode.ROLE_NOT_FOUND);
   }
-};
+
+  const response = new HTTPSuccessResponse(
+    "Role fetched successfully",
+    200,
+    role
+
+  )
+  return res.status(response.statusCode).json(response);
+}
 
 export const createRole = async (req: Request, res: Response) => {
   const { name } = req.body;
@@ -53,6 +87,45 @@ export const createRole = async (req: Request, res: Response) => {
   );
   res.status(response.statusCode).json(response);
 };
+
+export const updateRole = async (req: Request, res: Response) => {
+  const { roleId } = req.params;
+  const { name } = req.body;
+
+  const role = await prisma.role.update({
+    where: {
+      id: +roleId,
+    },
+    data: {
+      name: name,
+    }
+  }
+  );
+
+  const response = new HTTPSuccessResponse(
+    "Role updated successfully",
+    200,
+    role
+  );
+  res.status(response.statusCode).json(response);
+};
+
+export const deleteRole = async (req: Request, res: Response) => {
+  const { roleId } = req.params;
+
+  const role = await prisma.role.delete({
+    where: {
+      id: +roleId,
+    },
+  });
+
+  const response = new HTTPSuccessResponse(
+    "Role deleted successfully",
+    200,
+    role
+  );
+  res.status(response.statusCode).json(response);
+}
 
 // Permission Management
 export const createPermission = async (req: Request, res: Response) => {

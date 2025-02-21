@@ -5,6 +5,10 @@ import bcrypt from 'bcrypt';
 async function main() {
   // Add/Update few initial permissions on DB
   const permissions = [
+    { name: "CREATE_USER" },
+    { name: "UPDATE_USER" },
+    { name: "GET_USER" },
+    { name: "DELETE_USER" },
     { name: "CREATE_ROLE" },
     { name: "UPDATE_ROLE" },
     { name: "GET_ROLE" },
