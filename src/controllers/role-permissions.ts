@@ -127,6 +127,32 @@ export const deleteRole = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 }
 
+export const getPermissions = async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+  // Fetch roles with pagination
+  const permissions = await prisma.permission.findMany({ skip, take: limit });
+  const totalPermissions = await prisma.permission.count();
+
+
+  if (!permissions || permissions.length === 0) {
+    throw new NotFoundException("No roles found", ErrorCode.ROLE_NOT_FOUND);
+  }
+  const formattedResponse = formatPaginationResponse(permissions, totalPermissions, page, limit);
+
+  const response = new HTTPSuccessResponse(
+    "Permissions fetched successfully",
+    200,
+    formattedResponse
+  );
+  return res.status(response.statusCode).json(response);
+
+};
+
+
+
 // Permission Management
 export const createPermission = async (req: Request, res: Response) => {
   const { name } = req.body;
@@ -160,21 +186,65 @@ export const createPermission = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 };
 
+export const getPermissionById = async (req: Request, res: Response) => {
+  const { id } = req.params;
 
-export const getPermissions = async (req: Request, res: Response) => {
-  const role = await prisma.permission.findMany();
+  const permission = await prisma.permission.findUnique({
+    where: {
+      id: +id,
+    },
+  });
+
+  if (!permission) {
+    throw new NotFoundException("Permission not found", ErrorCode.ROLE_NOT_FOUND);
+  }
 
   const response = new HTTPSuccessResponse(
-    "Role created successfully",
-    201,
-    role
+    "Permission fetched successfully",
+    200,
+    permission
+  )
+  return res.status(response.statusCode).json(response);
+}
+
+export const updatePermission = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  const permission = await prisma.permission.update({
+    where: {
+      id: +id,
+    },
+    data: {
+      name: name,
+    }
+  }
+  );
+
+  const response = new HTTPSuccessResponse(
+    "Permission updated successfully",
+    200,
+    permission
   );
   res.status(response.statusCode).json(response);
+}
 
-  if (!role) {
-    throw new NotFoundException("Role not found", ErrorCode.ROLE_NOT_FOUND);
-  }
-};
+export const deletePermission = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const permission = await prisma.permission.delete({
+    where: {
+      id: +id,
+    },
+  });
+
+  const response = new HTTPSuccessResponse(
+    "Role deleted successfully",
+    200,
+    permission
+  );
+  res.status(response.statusCode).json(response);
+}
 
 // Role Permission
 export const createRolePermission = async (req: Request, res: Response) => {

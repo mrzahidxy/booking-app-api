@@ -5,10 +5,13 @@ import {
   createRole,
   createRolePermission,
   createUserRole,
+  deletePermission,
   deleteRole,
+  getPermissionById,
   getPermissions,
   getRoleById,
   getRoles,
+  updatePermission,
   updateRole,
 } from "../controllers/role-permissions";
 import checkPermission from "../middleware/check-permission";
@@ -24,14 +27,8 @@ roleMenuPermissionRoutes.get("/roles", [
 
 roleMenuPermissionRoutes.get("/roles/:roleId", [
   authMiddleware,
-  // checkPermission("CREATE_PERMISSION"),
+  checkPermission("GET_ROLE"),
   asyncHandler(getRoleById),
-])
-
-roleMenuPermissionRoutes.delete("/roles/:roleId", [
-  authMiddleware,
-  // checkPermission("DELETE_ROLE"),
-  asyncHandler(deleteRole),
 ])
 
 roleMenuPermissionRoutes.post("/roles", [
@@ -42,26 +39,18 @@ roleMenuPermissionRoutes.post("/roles", [
 
 roleMenuPermissionRoutes.put("/roles/:roleId", [
   authMiddleware,
-  // checkPermission("UPDATE_ROLE"),
+  checkPermission("UPDATE_ROLE"),
   asyncHandler(updateRole),
 ])
 
-
-
-// roleMenuPermissionRoutes.post("/roles/:roleId", [
-//   authMiddleware,
-//   // checkPermission("CREATE_PERMISSION"),
-//   asyncHandler(createRolePermission),
-// ])
-
-
-
-
-roleMenuPermissionRoutes.post("/permissions", [
+roleMenuPermissionRoutes.delete("/roles/:roleId", [
   authMiddleware,
-  checkPermission("CREATE_PERMISSION"),
-  asyncHandler(createPermission),
-]);
+  checkPermission("DELETE_ROLE"),
+  asyncHandler(deleteRole),
+])
+
+
+// Permissions
 
 roleMenuPermissionRoutes.get("/permissions", [
   authMiddleware,
@@ -69,15 +58,28 @@ roleMenuPermissionRoutes.get("/permissions", [
   asyncHandler(getPermissions),
 ]);
 
-roleMenuPermissionRoutes.post("/:roleId/permissions", [
+roleMenuPermissionRoutes.get("/permissions/:id", [
+  authMiddleware,
+  checkPermission("GET_PERMISSION"),
+  asyncHandler(getPermissionById),
+])
+
+roleMenuPermissionRoutes.post("/permissions", [
   authMiddleware,
   checkPermission("CREATE_PERMISSION"),
-  asyncHandler(createRolePermission),
+  asyncHandler(createPermission),
 ]);
 
-
-roleMenuPermissionRoutes.post("/:userId/role", [
+roleMenuPermissionRoutes.put("/permissions/:id", [
   authMiddleware,
-  checkPermission("CREATE_USER_ROLE"),
-  asyncHandler(createUserRole),
-]);
+  checkPermission("UPDATE_PERMISSION"),
+  asyncHandler(updatePermission),
+])
+
+roleMenuPermissionRoutes.delete("/permissions/:id", [
+  authMiddleware,
+  checkPermission("DELETE_PERMISSION"),
+  asyncHandler(deletePermission),
+])
+
+
