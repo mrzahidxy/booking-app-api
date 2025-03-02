@@ -34,15 +34,14 @@ export const getRoles = async (req: Request, res: Response) => {
 };
 
 export const getRoleById = async (req: Request, res: Response) => {
-  const { roleId } = req.params;
+  const { id } = req.params;
 
   const role = await prisma.role.findUnique({
     where: {
-      id: +roleId,
+      id: +id,
     },
   });
 
-  console.log("role", role);
 
   if (!role) {
     throw new NotFoundException("Role not found", ErrorCode.ROLE_NOT_FOUND);
@@ -89,12 +88,12 @@ export const createRole = async (req: Request, res: Response) => {
 };
 
 export const updateRole = async (req: Request, res: Response) => {
-  const { roleId } = req.params;
+  const { id } = req.params;
   const { name } = req.body;
 
   const role = await prisma.role.update({
     where: {
-      id: +roleId,
+      id: +id,
     },
     data: {
       name: name,
@@ -127,6 +126,8 @@ export const deleteRole = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 }
 
+
+// Permission Management
 export const getPermissions = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -150,10 +151,6 @@ export const getPermissions = async (req: Request, res: Response) => {
   return res.status(response.statusCode).json(response);
 
 };
-
-
-
-// Permission Management
 export const createPermission = async (req: Request, res: Response) => {
   const { name } = req.body;
 
@@ -246,23 +243,130 @@ export const deletePermission = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 }
 
-// Role Permission
-export const createRolePermission = async (req: Request, res: Response) => {
-  const { permissionIds } = req.body;
-  const { roleId } = req.params;
 
-  // Check if role exist
-  const role = await prisma.role.findUnique({
+// Ssign Permissions to Role
+
+export const getAssignedPermissions = async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+  // Step 1️⃣: Get total distinct roles count
+  const totalRoles = await prisma.role.count();
+
+  if (totalRoles === 0) {
+    throw new NotFoundException("No roles found", ErrorCode.ROLE_NOT_FOUND);
+  }
+
+  // Step 2️⃣: Fetch paginated roles
+  const roles = await prisma.role.findMany({
+    skip,
+    take: limit,
+  });
+
+  const roleIds = roles.map((role) => role.id);
+
+  // Step 3️⃣: Fetch permissions for these roles
+  const permissions = await prisma.rolePermission.findMany({
     where: {
-      id: +roleId,
+      roleId: { in: roleIds },
     },
+    include: {
+      permission: true,
+    },
+  });
+
+  // Step 4️⃣: Group permissions under their roles
+  const rolePermissionsMap = new Map<number, { roleId: number; roleName: string; permissions: string[] }>();
+
+  roles.forEach((role) => {
+    rolePermissionsMap.set(role.id, {
+      roleId: role.id,
+      roleName: role.name,
+      permissions: [],
+    });
+  });
+
+  permissions.forEach((rp) => {
+    const role = rolePermissionsMap.get(rp.roleId);
+    if (role) {
+      role.permissions.push(rp.permission.name);
+    }
+  });
+
+  const formattedPermissions = Array.from(rolePermissionsMap.values());
+
+  // Step 5️⃣: Format pagination response
+  const formattedResponse = formatPaginationResponse(
+    formattedPermissions,
+    totalRoles,
+    page,
+    limit
+  );
+
+  return res.status(200).json(
+    new HTTPSuccessResponse(
+      "Assigned Permissions fetched successfully",
+      200,
+      formattedResponse
+    )
+  );
+};
+
+export const getAssignedPermissionsById = async (req: Request, res: Response) => {
+  const roleId = parseInt(req.params.id);
+
+  if (!roleId) {
+    throw new NotFoundException("Invalid role ID", ErrorCode.ROLE_NOT_FOUND);
+  }
+
+  // Fetch the role
+  const role = await prisma.role.findUnique({
+    where: { id: roleId },
   });
 
   if (!role) {
     throw new NotFoundException("Role not found", ErrorCode.ROLE_NOT_FOUND);
   }
 
-  // Check if permissions exist
+  // Fetch all permissions assigned to this role
+  const rolePermissions = await prisma.rolePermission.findMany({
+    where: { roleId },
+    include: {
+      permission: true,
+    },
+  });
+
+  const permissionIds = rolePermissions.map((rp) => rp.permissionId);
+
+  const result = {
+    roleId: role.id,
+    roleName: role.name,
+    permissionIds,
+  };
+
+  const response = new HTTPSuccessResponse(
+    "Role-wise permissions fetched successfully",
+    200,
+    result
+  );
+
+  return res.status(response.statusCode).json(response);
+}
+
+export const createOrUpdateRolePermission = async (req: Request, res: Response) => {
+  const { permissionIds, roleId } = req.body;
+
+  // ✅ Check if role exists
+  const role = await prisma.role.findUnique({
+    where: { id: +roleId },
+  });
+
+  if (!role) {
+    throw new NotFoundException("Role not found", ErrorCode.ROLE_NOT_FOUND);
+  }
+
+  // ✅ Validate permissions
   const permissions = await prisma.permission.findMany({
     where: {
       id: {
@@ -274,46 +378,39 @@ export const createRolePermission = async (req: Request, res: Response) => {
   if (permissions.length !== permissionIds.length) {
     throw new BadRequestException(
       "Some permissions are invalid",
-      ErrorCode.ROLE_NOT_FOUND
+      ErrorCode.PERMISSION_ALREADY_EXISTS
     );
   }
 
-  // Check if role permission mappings already exist
-  const existingRolePermission = await prisma.rolePermission.findMany({
-    where: {
-      roleId: role.id,
-      permissionId: {
-        in: permissionIds,
-      },
-    },
+  // ✅ Delete all existing role-permission mappings for this role (if any)
+  await prisma.rolePermission.deleteMany({
+    where: { roleId: role.id },
   });
 
-  if (existingRolePermission.length > 0) {
-    throw new BadRequestException(
-      "Some permissions are already assigned to the role",
-      ErrorCode.ROLE_NOT_FOUND
-    );
-  }
-
-  // Create role permission mappings
-  const rolePermission = permissionIds.map((permissionId: number) => ({
+  // ✅ Insert new role-permission mappings
+  const newRolePermissions = permissionIds.map((permissionId: number) => ({
     roleId: role.id,
-    permissionId: permissionId,
+    permissionId,
   }));
 
   await prisma.rolePermission.createMany({
-    data: rolePermission,
+    data: newRolePermissions,
   });
 
   const response = new HTTPSuccessResponse(
-    "Role permission created successfully",
-    201,
-    rolePermission
+    "Role permissions assigned successfully",
+    200,
+    {
+      roleId: role.id,
+      permissionsAssigned: permissionIds,
+    }
   );
-  res.status(response.statusCode).json(response);
+
+  return res.status(response.statusCode).json(response);
 };
 
-// User Role
+
+// Assign Role to User
 export const createUserRole = async (req: Request, res: Response) => {
   const { userId } = req.params;
   const { roleId } = req.body;

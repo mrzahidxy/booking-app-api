@@ -18,7 +18,7 @@ async function main() {
     { name: "GET_PERMISSION" },
     { name: "DELETE_PERMISSION" },
     { name: "ASSIGN_PERMISSION" },
-    { name: "UPDATE_ASSIGN_PERMISSION" },
+    { name: "GET_ASSIGNED_PERMISSION" },
     { name: "ASSIGN_ROLE" },
     { name: "UPDATE_ASSIGN_ROLE" },
   ];

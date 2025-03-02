@@ -1,18 +1,20 @@
 import { asyncHandler } from "../exceptions/async-handler";
 import { Router } from "express";
 import {
+  createOrUpdateRolePermission,
   createPermission,
   createRole,
-  createRolePermission,
   createUserRole,
   deletePermission,
   deleteRole,
+  getAssignedPermissions,
+  getAssignedPermissionsById,
   getPermissionById,
   getPermissions,
   getRoleById,
   getRoles,
   updatePermission,
-  updateRole,
+  updateRole
 } from "../controllers/role-permissions";
 import checkPermission from "../middleware/check-permission";
 import { authMiddleware } from "../middleware/auth";
@@ -25,7 +27,7 @@ roleMenuPermissionRoutes.get("/roles", [
   asyncHandler(getRoles),
 ]);
 
-roleMenuPermissionRoutes.get("/roles/:roleId", [
+roleMenuPermissionRoutes.get("/roles/:id", [
   authMiddleware,
   checkPermission("GET_ROLE"),
   asyncHandler(getRoleById),
@@ -37,13 +39,13 @@ roleMenuPermissionRoutes.post("/roles", [
   asyncHandler(createRole),
 ]);
 
-roleMenuPermissionRoutes.put("/roles/:roleId", [
+roleMenuPermissionRoutes.put("/roles/:id", [
   authMiddleware,
   checkPermission("UPDATE_ROLE"),
   asyncHandler(updateRole),
 ])
 
-roleMenuPermissionRoutes.delete("/roles/:roleId", [
+roleMenuPermissionRoutes.delete("/roles/:id", [
   authMiddleware,
   checkPermission("DELETE_ROLE"),
   asyncHandler(deleteRole),
@@ -51,7 +53,6 @@ roleMenuPermissionRoutes.delete("/roles/:roleId", [
 
 
 // Permissions
-
 roleMenuPermissionRoutes.get("/permissions", [
   authMiddleware,
   checkPermission("GET_PERMISSION"),
@@ -81,5 +82,38 @@ roleMenuPermissionRoutes.delete("/permissions/:id", [
   checkPermission("DELETE_PERMISSION"),
   asyncHandler(deletePermission),
 ])
+
+// Assign Permission to Role
+roleMenuPermissionRoutes.get("/assigned-permissions/",
+  authMiddleware,
+  checkPermission("GET_ASSIGNED_PERMISSION"),
+  asyncHandler(getAssignedPermissions)
+)
+
+roleMenuPermissionRoutes.get("/assigned-permissions/:id",
+  authMiddleware,
+  checkPermission("GET_ASSIGNED_PERMISSION"),
+  asyncHandler(getAssignedPermissionsById)
+)
+
+roleMenuPermissionRoutes.post("/assigned-permissions/", [
+  authMiddleware,
+  checkPermission("ASSIGN_PERMISSION"),
+  asyncHandler(createOrUpdateRolePermission),
+]);
+
+roleMenuPermissionRoutes.put("/assigned-permissions/edit", [
+  authMiddleware,
+  checkPermission("ASSIGN_PERMISSION"),
+  asyncHandler(createOrUpdateRolePermission),
+]);
+
+
+// Assign Role to User
+roleMenuPermissionRoutes.post("/roles/:roleId/permissions/:permissionId", [
+  authMiddleware,
+  // checkPermission("ASSIGN_PERMISSION"),
+  asyncHandler(createUserRole),
+]);
 
 
