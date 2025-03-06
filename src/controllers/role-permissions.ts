@@ -411,16 +411,77 @@ export const createOrUpdateRolePermission = async (req: Request, res: Response) 
 
 
 // Assign Role to User
-export const createUserRole = async (req: Request, res: Response) => {
-  const { userId } = req.params;
+
+export const getRoleWiseUserList = async (req: Request, res: Response) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+  const users = await prisma.user.findMany({
+    skip,
+    take: limit,
+    include: {
+      Role: true
+    }
+  })
+
+  const totalUsers = await prisma.user.count();
+
+  if (!users || users.length === 0) {
+    throw new NotFoundException("No users found", ErrorCode.USER_NOT_FOUND);
+  }
+
+  const formattedResponse = formatPaginationResponse(users, totalUsers, page, limit);
+
+  return res.status(200).json(
+    new HTTPSuccessResponse(
+      "Users fetched successfully",
+      200,
+      formattedResponse
+    )
+  )
+}
+
+export const GetUserRoleById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: +id,
+    },
+    include: {
+      Role: true
+    }
+  });
+
+  if (!user) {
+    throw new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND);
+  }
+
+  const response = new HTTPSuccessResponse(
+    "User fetched successfully",
+    200,
+    user
+  );
+
+  return res.status(response.statusCode).json(response);
+
+}
+
+
+export const assaignUserRole = async (req: Request, res: Response) => {
+  const { id } = req.params;
   const { roleId } = req.body;
 
   // Check if user and role exist
   const user = await prisma.user.findUnique({
     where: {
-      id: +userId,
+      id: +id,
     },
   });
+
+
+  console.log('user', user);
 
   if (!user) {
     throw new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND);
@@ -447,7 +508,7 @@ export const createUserRole = async (req: Request, res: Response) => {
 
   const newRoleAssignment = await prisma.user.update({
     where: {
-      id: +userId,
+      id: +id,
     },
     data: {
       roleId: +roleId,

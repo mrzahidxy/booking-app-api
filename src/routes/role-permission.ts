@@ -1,10 +1,10 @@
 import { asyncHandler } from "../exceptions/async-handler";
 import { Router } from "express";
 import {
+  assaignUserRole,
   createOrUpdateRolePermission,
   createPermission,
   createRole,
-  createUserRole,
   deletePermission,
   deleteRole,
   getAssignedPermissions,
@@ -13,6 +13,8 @@ import {
   getPermissions,
   getRoleById,
   getRoles,
+  getRoleWiseUserList,
+  GetUserRoleById,
   updatePermission,
   updateRole
 } from "../controllers/role-permissions";
@@ -110,10 +112,22 @@ roleMenuPermissionRoutes.put("/assigned-permissions/edit", [
 
 
 // Assign Role to User
-roleMenuPermissionRoutes.post("/roles/:roleId/permissions/:permissionId", [
+roleMenuPermissionRoutes.get("/assigned-roles/", [
   authMiddleware,
-  // checkPermission("ASSIGN_PERMISSION"),
-  asyncHandler(createUserRole),
-]);
+  asyncHandler(getRoleWiseUserList)
+])
+
+
+roleMenuPermissionRoutes.get("/assigned-roles/:id", [
+  authMiddleware,
+  asyncHandler(GetUserRoleById)
+])
+
+
+roleMenuPermissionRoutes.post("/assigned-roles/:id", [
+  authMiddleware,
+  asyncHandler(assaignUserRole)
+])
+
 
 

@@ -1,24 +1,57 @@
 import { Request, Response } from "express";
 import prisma from "../connect";
-import { HTTPSuccessResponse } from "../helpers/success-response";;
+import { HTTPSuccessResponse } from "../helpers/success-response"; import { NotFoundException } from "../exceptions/not-found";
+import { formatPaginationResponse } from "../utils/common-method";
+import { ErrorCode } from "../exceptions/root";
+;
 
 export const getUsers = async (req: Request, res: Response) => {
-  const { page = 1, limit = 10 } = req.query;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
 
-  // Fetch all users from the database
   const users = await prisma.user.findMany({
-    skip: (+page - 1) * +limit,
-    take: +limit,
-  });
+    skip,
+    take: limit,
+  })
+
   const totalUsers = await prisma.user.count();
 
-  // Send success response
-  const response = new HTTPSuccessResponse("Users fetched successfully", 200, {
-    page: +page,
-    limit: +limit,
-    totalUsers,
-    collection: users,
+  if (!users || users.length === 0) {
+    throw new NotFoundException("No users found", ErrorCode.USER_NOT_FOUND);
+  }
+
+  const formattedResponse = formatPaginationResponse(users, totalUsers, page, limit);
+
+  return res.status(200).json(
+    new HTTPSuccessResponse(
+      "Users fetched successfully",
+      200,
+      formattedResponse
+    )
+  )
+}
+
+
+export const getUserById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: +id,
+    },
   });
+
+  if (!user) {
+    throw new NotFoundException("User not found", ErrorCode.USER_NOT_FOUND);
+  }
+
+  const response = new HTTPSuccessResponse(
+    "User fetched successfully",
+    200,
+    user
+  );
+
   res.status(response.statusCode).json(response);
 };
 
