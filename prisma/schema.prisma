@@ -46,23 +46,26 @@ model RolePermission {
 }
 
 model Hotel {
-  id        Int      @id @default(autoincrement())
-  name      String
-  location  String
-  image     String?
-  createdAt DateTime @default(now())
-  updateAt  DateTime @updatedAt
-  ratings   Float?   @default(0.0)
-  reviews   Review[]
-  rooms     Room[]
+  id          Int      @id @default(autoincrement())
+  name        String
+  location    String
+  image       String[]
+  description String?
+  amenities   String[]
+  createdAt   DateTime @default(now())
+  updateAt    DateTime @updatedAt
+  ratings     Float?   @default(0.0)
+  reviews     Review[]
+  rooms       Room[]
 }
 
 model Room {
   id        Int       @id @default(autoincrement())
   hotelId   Int
   price     Float
-  image     String?
+  image     String[]
   roomType  RoomType  @default(SINGLE)
+  amenities String[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   bookings  Booking[]
