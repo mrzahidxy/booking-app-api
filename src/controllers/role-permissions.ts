@@ -110,11 +110,11 @@ export const updateRole = async (req: Request, res: Response) => {
 };
 
 export const deleteRole = async (req: Request, res: Response) => {
-  const { roleId } = req.params;
+  const { id } = req.params;
 
   const role = await prisma.role.delete({
     where: {
-      id: +roleId,
+      id: +id,
     },
   });
 
