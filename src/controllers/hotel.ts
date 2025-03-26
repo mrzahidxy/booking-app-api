@@ -1,15 +1,17 @@
-import { NotFoundException } from "./../exceptions/not-found";
+
 import { Request, Response } from "express";
 import prisma from "../connect";
 import { HTTPSuccessResponse } from "../helpers/success-response";
-import { ErrorCode } from "../exceptions/root";
+
 import {
   hotelSchema,
-  roomBookingSchema,
   roomSchema,
   RoomType,
 } from "../schema/hotels";
 import { formatPaginationResponse, handleValidationError } from "../utils/common-method";
+import { NotFoundException } from "../exceptions/not-found";
+import { ErrorCode } from "../exceptions/root";
+import { Prisma } from "@prisma/client";
 
 
 
@@ -135,13 +137,13 @@ export const getHotels = async (req: Request, res: Response) => {
 
   // Fetch roles with pagination
   const hotels = await prisma.hotel.findMany({ skip, take: limit, include: { rooms: true } });
-  const totalRoles = await prisma.role.count();
+  const totalHotels = await prisma.hotel.count();
 
   if (!hotels || hotels.length === 0) {
-    throw new NotFoundException("No hotels found", ErrorCode.ROLE_NOT_FOUND);
+    throw new NotFoundException("No hotels found", ErrorCode.HOTEL_NOT_FOUND);
   }
 
-  const formattedResponse = formatPaginationResponse(hotels, totalRoles, page, limit);
+  const formattedResponse = formatPaginationResponse(hotels, totalHotels, page, limit);
 
   const response = new HTTPSuccessResponse(
     "Hotels fetched successfully",
@@ -181,76 +183,62 @@ export const getHotelDetails = async (req: Request, res: Response) => {
 
 // Search Hotels by Location, Room Type, and Price Range
 export const searchHotels = async (req: Request, res: Response) => {
-  const { location, minPrice, maxPrice, roomType } = req.query;
-  const hotels = await prisma.hotel.findMany({
-    where: {
-      ...(location && { location: location as string }),
-      rooms: {
-        some: {
-          ...(minPrice && { price: { gte: +minPrice } }),
-          ...(maxPrice && { price: { lte: +maxPrice } }),
-          ...(roomType && { roomType: roomType as RoomType }),
-        },
+
+  const { location, minPrice, maxPrice, roomType, name } = req.query;
+
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+
+  const whereClause = {
+    ...(location && { location:  {
+      contains: location as string,
+      mode: Prisma.QueryMode.insensitive,
+    }}),
+    ...(name && {
+      name: {
+        contains: name as string,
+        mode: Prisma.QueryMode.insensitive,
+      },
+    }),
+    rooms: {
+      some: {
+        ...(minPrice && { price: { gte: +minPrice } }),
+        ...(maxPrice && { price: { lte: +maxPrice } }),
+        ...(roomType && { roomType: roomType as RoomType }),
       },
     },
-    include: {
-      rooms: true,
-    },
+  }
+
+  // Fetch paginated data
+  const hotels = await prisma.hotel.findMany({
+    where: whereClause,
+    include: { rooms: true },
+    skip,
+    take: limit,
   });
+
+  const totalHotels = await prisma.hotel.count({
+    where: whereClause,
+  });
+
+
+  if (!hotels || hotels.length === 0) {
+    throw new NotFoundException("No hotels found", ErrorCode.HOTEL_NOT_FOUND);
+  }
+
+  const formattedResponse = formatPaginationResponse(hotels, totalHotels, page, limit);
 
   const response = new HTTPSuccessResponse(
     "Hotels fetched successfully",
     200,
-    hotels
+    formattedResponse
   );
   res.status(response.statusCode).json(response);
 };
 
-// Book a Room
-export const bookRoom = async (req: Request, res: Response) => {
-  // Validate request data
-  const validateResult = roomBookingSchema.safeParse({
-    ...req.body,
-    userId: req.user?.id,
-  });
 
-  if (!validateResult.success) {
-    handleValidationError(res, validateResult);
-  }
-
-  const { userId, roomId, bookingDate, quantity } = validateResult.data!;
-
-  // Find the room
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
-  });
-
-  if (!room) {
-    throw new NotFoundException("Room not found", ErrorCode.ROOM_NOT_FOUND);
-  }
-
-  // Calculate total price
-  const totalPrice = room.price * Number(quantity);
-
-  // Create booking
-  const booking = await prisma.booking.create({
-    data: {
-      userId,
-      roomId,
-      bookingDate: new Date(bookingDate),
-      totalPrice,
-      status: "CONFIRMED",
-    },
-  });
-
-  // Send success response
-  const response = new HTTPSuccessResponse(
-    "Room booked successfully",
-    201,
-    booking
-  );
-  res.status(response.statusCode).json(response);
-};
 
 // Cancel Booking
 export const cancelBooking = async (req: Request, res: Response) => {

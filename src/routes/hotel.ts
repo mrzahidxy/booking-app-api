@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../exceptions/async-handler";
 import {
-  bookRoom,
   CreateUpdateHotel,
   deleteHotel,
   getHotelDetails,
@@ -32,4 +31,4 @@ hotelRoutes.put(
 );
 
 hotelRoutes.delete("/:id", authMiddleware, asyncHandler(deleteHotel));
-hotelRoutes.post("/book-room", authMiddleware, bookRoom);
+
