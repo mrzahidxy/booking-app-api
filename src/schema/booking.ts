@@ -27,11 +27,11 @@ export const reservationSchema = z.object({
     bookingDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
         message: "bookingDate is required and must be a valid date",
     }),
-    timeSlot: z
-        .enum(["noon", "evening", "late-night"])
-        .refine((val) => val.length > 0, {
-            message: "timeSlot must be one of 'noon', 'evening', or 'late night'.",
-        }),
+    // timeSlot: z
+    //     .enum(["noon", "evening", "late-night"])
+    //     .refine((val) => val.length > 0, {
+    //         message: "timeSlot must be one of 'noon', 'evening', or 'late night'.",
+    //     }),
     partySize: z
         .number()
         .int()

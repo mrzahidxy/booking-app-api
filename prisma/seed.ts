@@ -1,16 +1,26 @@
 // prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
+import prisma  from '../src/connect';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
-
 async function main() {
-  // Define permissions
+  // Add/Update few initial permissions on DB
   const permissions = [
-    { name: 'CREATE_MENU' },
-    { name: 'CREATE_ROLE' },
-    { name: 'CREATE_PERMISSION' },
-    { name: 'CREATE_ROLEASSIGNMENT' },
+    { name: "CREATE_USER" },
+    { name: "UPDATE_USER" },
+    { name: "GET_USER" },
+    { name: "DELETE_USER" },
+    { name: "CREATE_ROLE" },
+    { name: "UPDATE_ROLE" },
+    { name: "GET_ROLE" },
+    { name: "DELETE_ROLE" },
+    { name: "CREATE_PERMISSION" },
+    { name: "UPDATE_PERMISSION" },
+    { name: "GET_PERMISSION" },
+    { name: "DELETE_PERMISSION" },
+    { name: "ASSIGN_PERMISSION" },
+    { name: "GET_ASSIGNED_PERMISSION" },
+    { name: "ASSIGN_ROLE" },
+    { name: "UPDATE_ASSIGN_ROLE" },
   ];
 
   // Upsert Permissions
@@ -32,7 +42,7 @@ async function main() {
     create: { name: 'Admin' },
   });
 
-  // Assign all permissions to Admin
+  // Payload for RolePermissions
   const adminRolePermissions = allPermissions.map((perm) => ({
     roleId: adminRole.id,
     permissionId: perm.id,
@@ -59,9 +69,13 @@ async function main() {
       data: {
         email: adminEmail,
         password: hashedPassword,
-        UserRoles: { create: { role: { connect: { name: 'Admin' } } },
+        Role: {
+          connect: {
+            id: adminRole.id,
+          },
+        },
       },
-    }});
+    });
 
     console.log('Admin user created:', newAdmin.email);
   } else {

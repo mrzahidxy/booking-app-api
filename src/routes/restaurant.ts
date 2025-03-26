@@ -13,7 +13,7 @@ import {
 import { authMiddleware } from "../middleware/auth";
 import multer from "multer";
 import { storage } from "../config/cloudinary";
-import { adminMiddleWare } from "../middleware/admin";
+import checkPermission from "../middleware/check-permission";
 
 const upload = multer({ storage: storage });
 const restaurantRoutes: Router = Router();
@@ -21,17 +21,18 @@ const restaurantRoutes: Router = Router();
 restaurantRoutes.get("/", asyncHandler(getAllRestaurants));
 restaurantRoutes.get("/search", asyncHandler(searchRestaurants));
 restaurantRoutes.get("/:id", asyncHandler(getRestaurantDetails));
+
 restaurantRoutes.post(
   "/",
   authMiddleware,
-  adminMiddleWare,
+  checkPermission("CREATE_RESTAURANT"),
   upload.single("image"),
   asyncHandler(createRestaurant)
 );
 restaurantRoutes.put(
   "/:id",
   authMiddleware,
-  adminMiddleWare,
+  checkPermission("UPDATE_RESTAURANT"),
   upload.single("image"),
   asyncHandler(updateRestaurant)
 );

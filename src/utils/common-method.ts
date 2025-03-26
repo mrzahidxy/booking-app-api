@@ -13,3 +13,20 @@ export const handleValidationError = (res: Response, validationResult: { success
   }
   return null;
 };
+
+
+export const formatPaginationResponse = (data: any[], totalItems: number, page: number, limit: number) => {
+  const totalPages = Math.ceil(totalItems / limit);
+  
+  return {
+    collection:data,
+    pagination: {
+      totalItems,
+      totalPages,
+      currentPage: page,
+      pageSize: limit,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    },
+  };
+};

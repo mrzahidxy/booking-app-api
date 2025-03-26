@@ -12,6 +12,7 @@ export const authMiddleware = async (
   next: NextFunction
 ) => {
   const token = req.headers.authorization;
+  
 
   if (!token) {
     next(

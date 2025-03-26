@@ -1,79 +1,157 @@
-import { NotFoundException } from "./../exceptions/not-found";
+
 import { Request, Response } from "express";
 import prisma from "../connect";
 import { HTTPSuccessResponse } from "../helpers/success-response";
-import { ErrorCode } from "../exceptions/root";
+
 import {
   hotelSchema,
-  hotelUpdateSchema,
-  roomBookingSchema,
   roomSchema,
   RoomType,
 } from "../schema/hotels";
-import { handleValidationError } from "../utils/common-method";
-import { InternalException } from "../exceptions/internal-exception";
+import { formatPaginationResponse, handleValidationError } from "../utils/common-method";
+import { NotFoundException } from "../exceptions/not-found";
+import { ErrorCode } from "../exceptions/root";
+import { Prisma } from "@prisma/client";
 
-export const createHotel = async (req: Request, res: Response) => {
-  const validateResult = hotelSchema.safeParse({
-    ...req.body,
-    image: req.file?.path,
-  });
-  handleValidationError(res, validateResult);
 
-  const { name, location } = validateResult.data!;
-  const imageUrl = req.file ? req.file.path : null;
 
-  const hotel = await prisma.hotel.create({
-    data: {
-      name,
-      location,
-      image: imageUrl,
-    },
-  });
 
-  res.json(new HTTPSuccessResponse("Hotel created successfully", 201, hotel));
-};
+export const CreateUpdateHotel = async (req: Request, res: Response) => {
+  // ✅ Validate hotel data
+  const validation = hotelSchema.safeParse(req.body);
+  if (!validation.success) return handleValidationError(res, validation);
 
-export const updateHotel = async (req: Request, res: Response) => {
-  // Step 1: Validate the input using hotelUpdateSchema
-  const validateResult = hotelUpdateSchema.safeParse({
-    ...(req.body.name ? { name: req.body.name } : {}),
-    ...(req.body.location ? { location: req.body.location } : {}),
-    ...(req.file ? { image: req.file.path } : {}),
-  });
+  const { name, location, description, amenities, image, rooms } = validation.data;
+  const hotelId = req.params.id ? +req.params.id : null;
 
-  // Step 2: Check if validation was successful
-  if (!validateResult.success) {
-    // Return early if validation fails
-    return handleValidationError(res, validateResult);
+  let hotel;
+
+  if (hotelId) {
+    // ✅ **Update Hotel**
+    hotel = await prisma.hotel.update({
+      where: { id: hotelId },
+      data: { name, location, image, description, amenities },
+    });
+  } else {
+    // ✅ **Create Hotel**
+    hotel = await prisma.hotel.create({
+      data: { name, location, image, description, amenities },
+    });
   }
 
-  // Step 3: Extract validated data
-  const { name, location, image } = validateResult.data;
+  // 🏨 **Process Rooms (if provided & valid)**
+  if (rooms?.length) {
+    const validRooms = rooms
+      .map((room) => roomSchema.safeParse(room))
+      .filter((res) => res.success)
+      .map((res) => res.data); // Extract only valid room data
 
-  // Step 4: Construct update data with only provided fields
-  const updateData = {
-    ...(name && { name }),
-    ...(location && { location }),
-    ...(image && { image }),
-  };
+    // 🔍 **Fetch Existing Rooms for Hotel**
+    const existingRooms = await prisma.room.findMany({
+      where: { hotelId: hotel.id },
+      select: { id: true }, // Only fetch room IDs
+    });
 
-  const hotel = await prisma.hotel.update({
-    where: { id: +req.params.id },
-    data: updateData,
+    const existingRoomIds = new Set(existingRooms.map((room) => room.id));
+    const incomingRoomIds = new Set(validRooms.map((room) => room.id).filter(Boolean));
+
+    // 🔥 **Delete Rooms That Are No Longer in the Request**
+    const roomsToDelete = [...existingRoomIds].filter((id) => !incomingRoomIds.has(id));
+
+    if (roomsToDelete.length > 0) {
+      await prisma.room.deleteMany({
+        where: { id: { in: roomsToDelete } },
+      });
+    }
+
+    // 🔄 **Process Each Room (Create or Update)**
+    await Promise.all(
+      validRooms.map(async ({ id, roomType, price, image, amenities }) => {
+        if (id) {
+          // ✅ Update Existing Room
+          await prisma.room.update({
+            where: { id },
+            data: { roomType, price: +price, image, amenities },
+          });
+        } else {
+          // ✅ Create New Room
+          await prisma.room.create({
+            data: { hotelId: hotel.id, roomType, price: +price, image, amenities },
+          });
+        }
+      })
+    );
+  } else {
+    // 🔥 If rooms array is empty, delete all existing rooms for the hotel
+    await prisma.room.deleteMany({
+      where: { hotelId: hotel.id },
+    });
+  }
+
+  // 📤 **Return Response**
+  return res.status(hotelId ? 200 : 201).json(
+    new HTTPSuccessResponse(
+      `Hotel ${hotelId ? "updated" : "created"} successfully`,
+      hotelId ? 200 : 201,
+      hotel
+    )
+  );
+};
+
+
+// Delete a Hotel
+export const deleteHotel = async (req: Request, res: Response) => {
+  const hotelId = +req.params.id;
+
+  const hotel = await prisma.hotel.findUnique({
+    where: { id: hotelId },
+    include: { rooms: true }, // Fetch related rooms
   });
 
-  // Step 6: Send success response
-  res.json(new HTTPSuccessResponse("Hotel updated successfully", 200, hotel));
-};
+  if (!hotel) {
+    throw new NotFoundException("Hotel not found", ErrorCode.HOTEL_NOT_FOUND);
+  }
+
+  await prisma.room.deleteMany({
+    where: { hotelId },
+  });
+
+  await prisma.hotel.delete({
+    where: { id: hotelId },
+  });
+
+
+  const response = new HTTPSuccessResponse(
+    "Hotel deleted successfully",
+    200,
+    hotel
+  );
+  return res.status(response.statusCode).json(response);
+}
 
 // Get All Hotels
 export const getHotels = async (req: Request, res: Response) => {
-  const hotels = await prisma.hotel.findMany({
-    include: { rooms: true },
-  });
-  res.json(new HTTPSuccessResponse("Hotels fetched successfully", 200, hotels));
-};
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+  // Fetch roles with pagination
+  const hotels = await prisma.hotel.findMany({ skip, take: limit, include: { rooms: true } });
+  const totalHotels = await prisma.hotel.count();
+
+  if (!hotels || hotels.length === 0) {
+    throw new NotFoundException("No hotels found", ErrorCode.HOTEL_NOT_FOUND);
+  }
+
+  const formattedResponse = formatPaginationResponse(hotels, totalHotels, page, limit);
+
+  const response = new HTTPSuccessResponse(
+    "Hotels fetched successfully",
+    200,
+    formattedResponse
+  );
+  return res.status(response.statusCode).json(response);
+}
 
 // Get Detailed Hotel Information including Rooms
 export const getHotelDetails = async (req: Request, res: Response) => {
@@ -82,6 +160,11 @@ export const getHotelDetails = async (req: Request, res: Response) => {
     where: { id: hotelId },
     include: {
       rooms: true,
+      reviews: {
+        include: {
+          user: true,
+        },
+      },
     },
   });
 
@@ -97,168 +180,65 @@ export const getHotelDetails = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 };
 
-export const createRoom = async (req: Request, res: Response) => {
-  const validateResult = roomSchema.safeParse({
-    ...req.body,
-    image: req.file?.path,
-  });
-  const hotelId = +req.params.id;
-  const { roomType, price, image } = validateResult.data!;
-
-  const roomData = {
-    hotelId,
-    roomType,
-    price: +price,
-    image,
-  };
-
-  // Check if the hotel exists
-  const hotel = await prisma.hotel.findUnique({
-    where: { id: hotelId },
-  });
-
-  if (!hotel) {
-    throw new InternalException(
-      "Hotel not found",
-      "",
-      ErrorCode.HOTEL_NOT_FOUND
-    );
-  }
-
-  // Create the room under the hotel
-  const newRoom = await prisma.room.create({
-    data: roomData,
-  });
-
-  res.json(new HTTPSuccessResponse("Hotel created successfully", 201, newRoom));
-};
-
-export const updateRoom = async (req: Request, res: Response) => {
-  const hotelId = +req.params.id;
-  const { roomId, roomType, price } = req.body;
-
-  const roomData = {
-    hotelId,
-    roomType,
-    price: +price,
-    image: req.file ? req.file.path : null,
-  };
-
-  try {
-    // Check if the hotel exists
-    const existingHotel = await prisma.hotel.findUnique({
-      where: { id: hotelId },
-    });
-
-    if (!existingHotel) {
-      throw new InternalException(
-        "Hotel not found",
-        "",
-        ErrorCode.HOTEL_NOT_FOUND
-      );
-    }
-
-    const existingRoom = await prisma.room.findUnique({
-      where: { id: roomId },
-    });
-
-    if (!existingRoom) {
-      throw new InternalException(
-        "Room not found",
-        "",
-        ErrorCode.ROOM_NOT_FOUND
-      );
-    }
-
-    // Create the room under the hotel
-    const updatedRoom = await prisma.room.update({
-      where: { id: roomId },
-      data: roomData,
-    });
-
-    res.json(
-      new HTTPSuccessResponse("Updated room successfully", 201, updatedRoom)
-    );
-  } catch (error) {
-    console.error("Error creating room:", error);
-    throw error;
-  }
-};
 
 // Search Hotels by Location, Room Type, and Price Range
 export const searchHotels = async (req: Request, res: Response) => {
-  const { location, minPrice, maxPrice, roomType } = req.query;
-  const hotels = await prisma.hotel.findMany({
-    where: {
-      location: location as string,
-      rooms: {
-        some: {
-          price: {
-            gte: minPrice ? +minPrice : undefined,
-            lte: maxPrice ? +maxPrice : undefined,
-          },
-          roomType: { equals: roomType as RoomType },
-        },
+
+  const { location, minPrice, maxPrice, roomType, name } = req.query;
+
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+
+  const whereClause = {
+    ...(location && { location:  {
+      contains: location as string,
+      mode: Prisma.QueryMode.insensitive,
+    }}),
+    ...(name && {
+      name: {
+        contains: name as string,
+        mode: Prisma.QueryMode.insensitive,
+      },
+    }),
+    rooms: {
+      some: {
+        ...(minPrice && { price: { gte: +minPrice } }),
+        ...(maxPrice && { price: { lte: +maxPrice } }),
+        ...(roomType && { roomType: roomType as RoomType }),
       },
     },
-    include: {
-      rooms: true,
-    },
+  }
+
+  // Fetch paginated data
+  const hotels = await prisma.hotel.findMany({
+    where: whereClause,
+    include: { rooms: true },
+    skip,
+    take: limit,
   });
+
+  const totalHotels = await prisma.hotel.count({
+    where: whereClause,
+  });
+
+
+  if (!hotels || hotels.length === 0) {
+    throw new NotFoundException("No hotels found", ErrorCode.HOTEL_NOT_FOUND);
+  }
+
+  const formattedResponse = formatPaginationResponse(hotels, totalHotels, page, limit);
 
   const response = new HTTPSuccessResponse(
     "Hotels fetched successfully",
     200,
-    hotels
+    formattedResponse
   );
   res.status(response.statusCode).json(response);
 };
 
-// Book a Room
-export const bookRoom = async (req: Request, res: Response) => {
-  // Validate request data
-  const validateResult = roomBookingSchema.safeParse({
-    ...req.body,
-    userId: req.user?.id,
-  });
 
-  if (!validateResult.success) {
-    handleValidationError(res, validateResult);
-  }
-
-  const { userId, roomId, bookingDate, quantity } = validateResult.data!;
-
-  // Find the room
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
-  });
-
-  if (!room) {
-    throw new NotFoundException("Room not found", ErrorCode.ROOM_NOT_FOUND);
-  }
-
-  // Calculate total price
-  const totalPrice = room.price * Number(quantity);
-
-  // Create booking
-  const booking = await prisma.booking.create({
-    data: {
-      userId,
-      roomId,
-      bookingDate: new Date(bookingDate),
-      totalPrice,
-      status: "CONFIRMED",
-    },
-  });
-
-  // Send success response
-  const response = new HTTPSuccessResponse(
-    "Room booked successfully",
-    201,
-    booking
-  );
-  res.status(response.statusCode).json(response);
-};
 
 // Cancel Booking
 export const cancelBooking = async (req: Request, res: Response) => {
