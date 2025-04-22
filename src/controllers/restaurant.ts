@@ -6,31 +6,23 @@ import { ErrorCode } from "../exceptions/root";
 import { InternalException } from "../exceptions/internal-exception";
 import { reservationSchema, updateStatusSchema } from "../schema/booking";
 import { BadRequestException } from "../exceptions/bad-request";
-import { handleValidationError } from "../utils/common-method";
+import {
+  formatPaginationResponse,
+  handleValidationError,
+} from "../utils/common-method";
+import { restaurantSchema } from "../schema/restaurant";
 
 export const createRestaurant = async (req: Request, res: Response) => {
-  const { name, location, cuisine, seats, menu } = req.body;
-  try {
-    // Check if an image file was uploaded
-    const imageUrl = req.file ? req.file.path : null;
+  const validation = restaurantSchema.safeParse(req.body);
+  if (!validation.success) return handleValidationError(res, validation);
+  const { name, location, cuisine, seats, menu, image, description } = validation.data;
 
-    const restaurant = await prisma.restaurant.create({
-      data: { name, location, cuisine, image: imageUrl, seats: +seats, menu },
-    });
-    res.json(
-      new HTTPSuccessResponse(
-        "Restaurant created successfully",
-        201,
-        restaurant
-      )
-    );
-  } catch (error) {
-    throw new InternalException(
-      "Failed to create restaurant",
-      error,
-      ErrorCode.INTERNAL_EXCEPTION
-    );
-  }
+  const restaurant = await prisma.restaurant.create({
+    data: { name, location, description, cuisine, image, seats, menu:JSON.stringify(menu) },
+  });
+  res.json(
+    new HTTPSuccessResponse("Restaurant created successfully", 201, restaurant)
+  );
 };
 
 export const updateRestaurant = async (req: Request, res: Response) => {
@@ -67,13 +59,22 @@ export const getAllRestaurants = async (req: Request, res: Response) => {
     take: +limit,
     include: { bookings: true },
   });
-  res.json(
-    new HTTPSuccessResponse(
-      "Restaurants fetched successfully",
-      200,
-      restaurants
-    )
+
+  const totalRestaurants = await prisma.restaurant.count();
+
+  const formattedResponse = formatPaginationResponse(
+    restaurants,
+    totalRestaurants,
+    +page,
+    +limit
   );
+
+  const response = new HTTPSuccessResponse(
+    "Restaurants fetched successfully",
+    200,
+    formattedResponse
+  );
+  res.status(response.statusCode).json(response);
 };
 
 // // Search Restaurants by Cuisine, Location, Price Range, and Availability
@@ -88,12 +89,12 @@ export const searchRestaurants = async (req: Request, res: Response) => {
           mode: "insensitive",
         },
       }),
-      ...(cuisine && {
-        cuisine: {
-          contains: cuisine as string,
-          mode: "insensitive",
-        },
-      }),
+      // ...(cuisine && {
+      //   cuisine: {
+      //     contains: cuisine as string[],
+      //     mode: "insensitive",
+      //   },
+      // }),
       ...(ratings && {
         ratings: +ratings,
       }),
@@ -155,6 +156,8 @@ export const checkTableAvailability = async (
     timeSlot: string;
     partySize?: string; // Optional
   };
+
+  console.log('restaurantId', restaurantId, 'date', date, 'timeSlot', 'partySize', partySize);
   // Fetch restaurant details to get seating capacity
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: +restaurantId },
@@ -184,6 +187,8 @@ export const checkTableAvailability = async (
 
   const isAvailable =
     totalBookedSeats + requestedPartySize <= restaurant.seats!;
+
+    console.log('totalBookedSeats', totalBookedSeats, 'requestedPartySize', requestedPartySize, 'seats', restaurant.seats);
   const availAbality = restaurant.seats! - totalBookedSeats;
 
   const response = new HTTPSuccessResponse(
@@ -203,7 +208,7 @@ export const reserveTable = async (req: Request, res: Response) => {
     return handleValidationError(res, validationResult);
   }
 
-  const { userId, restaurantId, bookingDate, partySize, totalPrice } =
+  const { restaurantId, bookingDate, partySize } =
     validationResult.data;
 
   const booking = await prisma.$transaction(async (tx) => {
@@ -245,11 +250,11 @@ export const reserveTable = async (req: Request, res: Response) => {
 
     return tx.booking.create({
       data: {
-        userId,
+        userId:req.user?.id as number,
         restaurantId,
         bookingDate: new Date(bookingDate),
         partySize,
-        totalPrice,
+        totalPrice:100,
         status: "PENDING",
       },
     });

@@ -25,8 +25,8 @@ restaurantRoutes.get("/:id", asyncHandler(getRestaurantDetails));
 restaurantRoutes.post(
   "/",
   authMiddleware,
-  checkPermission("CREATE_RESTAURANT"),
-  upload.single("image"),
+  // checkPermission("CREATE_RESTAURANT"),
+  // upload.single("image"),
   asyncHandler(createRestaurant)
 );
 restaurantRoutes.put(
@@ -49,7 +49,7 @@ restaurantRoutes.post(
 
 restaurantRoutes.get(
   "/reservation/check",
-  authMiddleware,
+  // authMiddleware,
   asyncHandler(checkTableAvailability)
 );
 
