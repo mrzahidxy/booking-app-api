@@ -77,6 +77,7 @@ model Restaurant {
   name        String
   description String?
   location    String
+  timeSlots   TimeSlotType[]
   image       String[]
   cuisine     String[]
   ratings     Float     @default(0.0)
@@ -131,4 +132,12 @@ enum RoomType {
   DOUBLE
   TWIN
   TRIPLE
+}
+
+enum TimeSlotType {
+  MORNING
+  NOON
+  AFTERNOON
+  EVENING
+  NIGHT
 }

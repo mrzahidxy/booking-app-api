@@ -18,7 +18,7 @@ export const createRestaurant = async (req: Request, res: Response) => {
   const { name, location, cuisine, seats, menu, image, description } = validation.data;
 
   const restaurant = await prisma.restaurant.create({
-    data: { name, location, description, cuisine, image, seats, menu:JSON.stringify(menu) },
+    data: { name, location, description, cuisine, image, seats, menu: JSON.stringify(menu) },
   });
   res.json(
     new HTTPSuccessResponse("Restaurant created successfully", 201, restaurant)
@@ -150,14 +150,13 @@ export const checkTableAvailability = async (
   res: Response
 ): Promise<Response> => {
   // Extract query parameters
-  const { restaurantId, date, partySize } = req.query as {
+  const { restaurantId, date, partySize, timeSlot } = req.query as {
     restaurantId: string;
     date: string;
     timeSlot: string;
     partySize?: string; // Optional
   };
 
-  console.log('restaurantId', restaurantId, 'date', date, 'timeSlot', 'partySize', partySize);
   // Fetch restaurant details to get seating capacity
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: +restaurantId },
@@ -174,6 +173,7 @@ export const checkTableAvailability = async (
       restaurantId: +restaurantId,
       bookingDate: new Date(date),
       status: "CONFIRMED",
+      timeSlot: timeSlot
     },
   });
 
@@ -188,7 +188,7 @@ export const checkTableAvailability = async (
   const isAvailable =
     totalBookedSeats + requestedPartySize <= restaurant.seats!;
 
-    console.log('totalBookedSeats', totalBookedSeats, 'requestedPartySize', requestedPartySize, 'seats', restaurant.seats);
+  console.log('totalBookedSeats', totalBookedSeats, 'requestedPartySize', requestedPartySize, 'seats', restaurant.seats);
   const availAbality = restaurant.seats! - totalBookedSeats;
 
   const response = new HTTPSuccessResponse(
@@ -208,7 +208,7 @@ export const reserveTable = async (req: Request, res: Response) => {
     return handleValidationError(res, validationResult);
   }
 
-  const { restaurantId, bookingDate, partySize } =
+  const { restaurantId, bookingDate, partySize, timeSlot } =
     validationResult.data;
 
   const booking = await prisma.$transaction(async (tx) => {
@@ -231,6 +231,9 @@ export const reserveTable = async (req: Request, res: Response) => {
         restaurantId,
         bookingDate: new Date(bookingDate),
         status: "CONFIRMED",
+        timeSlot: {
+          in: [timeSlot],
+        },
       },
       _sum: {
         partySize: true,
@@ -250,11 +253,12 @@ export const reserveTable = async (req: Request, res: Response) => {
 
     return tx.booking.create({
       data: {
-        userId:req.user?.id as number,
+        userId: req.user?.id as number,
         restaurantId,
         bookingDate: new Date(bookingDate),
         partySize,
-        totalPrice:100,
+        timeSlot,
+        totalPrice: 100,
         status: "PENDING",
       },
     });

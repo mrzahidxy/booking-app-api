@@ -28,7 +28,7 @@ export const reservationSchema = z.object({
         message: "bookingDate is required and must be a valid date",
     }),
     timeSlot: z
-        .enum(["noon", "evening", "late-night"])
+        .enum(["MORNING", "NOON", "AFTERNOON", "EVENING", "NIGHT"])
         .refine((val) => val.length > 0, {
             message: "timeSlot must be one of 'noon', 'evening', or 'late night'.",
         }),
