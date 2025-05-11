@@ -65,6 +65,7 @@ model Room {
   price     Float
   image     String[]
   roomType  RoomType  @default(SINGLE)
+  quantity  Int @default(1)
   amenities String[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -73,18 +74,20 @@ model Room {
 }
 
 model Restaurant {
-  id        Int       @id @default(autoincrement())
-  name      String
-  location  String
-  image     String?
-  cuisine   String
-  ratings   Float     @default(0.0)
-  reviews   Review[]
-  seats     Int?
-  menu      String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  bookings  Booking[]
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  location    String
+  timeSlots   TimeSlotType[]
+  image       String[]
+  cuisine     String[]
+  ratings     Float     @default(0.0)
+  reviews     Review[]
+  seats       Int?
+  menu        Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]
 }
 
 model Review {
@@ -108,6 +111,7 @@ model Booking {
   restaurantId Int?
   bookingDate  DateTime
   totalPrice   Float
+  roomQuantity     Int?
   partySize    Int?
   timeSlot     String?
   status       BookingStatus @default(PENDING)
@@ -130,4 +134,12 @@ enum RoomType {
   DOUBLE
   TWIN
   TRIPLE
+}
+
+enum TimeSlotType {
+  MORNING
+  NOON
+  AFTERNOON
+  EVENING
+  NIGHT
 }

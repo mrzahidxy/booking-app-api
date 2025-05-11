@@ -12,6 +12,7 @@ import { formatPaginationResponse, handleValidationError } from "../utils/common
 import { NotFoundException } from "../exceptions/not-found";
 import { ErrorCode } from "../exceptions/root";
 import { Prisma } from "@prisma/client";
+import { BadRequestException } from "../exceptions/bad-request";
 
 
 
@@ -139,11 +140,11 @@ export const getHotels = async (req: Request, res: Response) => {
   const hotels = await prisma.hotel.findMany({ skip, take: limit, include: { rooms: true } });
   const totalHotels = await prisma.hotel.count();
 
-  if (!hotels || hotels.length === 0) {
-    throw new NotFoundException("No hotels found", ErrorCode.HOTEL_NOT_FOUND);
-  }
+  // if (!hotels || hotels.length === 0) {
+  //   throw new NotFoundException("No hotels found", ErrorCode.HOTEL_NOT_FOUND);
+  // }
 
-  const formattedResponse = formatPaginationResponse(hotels, totalHotels, page, limit);
+  const formattedResponse = formatPaginationResponse(hotels ?? [], totalHotels, page, limit);
 
   const response = new HTTPSuccessResponse(
     "Hotels fetched successfully",
@@ -192,10 +193,12 @@ export const searchHotels = async (req: Request, res: Response) => {
 
 
   const whereClause = {
-    ...(location && { location:  {
-      contains: location as string,
-      mode: Prisma.QueryMode.insensitive,
-    }}),
+    ...(location && {
+      location: {
+        contains: location as string,
+        mode: Prisma.QueryMode.insensitive,
+      }
+    }),
     ...(name && {
       name: {
         contains: name as string,
@@ -238,21 +241,61 @@ export const searchHotels = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 };
 
+export const checkRoomAvailability = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  // Extract query parameters
+  const { roomId, date, quantity } = req.query as {
+    roomId: string;
+    date: string;
+    quantity: string
+  };
 
+  if (!roomId || !date || !quantity) {
+    throw new BadRequestException(
+      "Missing required parameters",
+      ErrorCode.BAD_REQUEST
+    );
+  }
 
-// Cancel Booking
-export const cancelBooking = async (req: Request, res: Response) => {
-  const bookingId = +req.params.id;
-
-  const booking = await prisma.booking.update({
-    where: { id: bookingId },
-    data: { status: "CANCELLED" },
+  // Fetch room details
+  const room = await prisma.room.findUnique({
+    where: { id: +roomId },
+    select: { quantity: true },
   });
 
-  const response = new HTTPSuccessResponse(
-    "Booking cancelled successfully",
-    200,
-    booking
+  if (!room) {
+    throw new NotFoundException("Room not found", ErrorCode.ROOM_NOT_FOUND);
+  }
+
+  // Fetch confirmed bookings for the specified restaurant
+  const bookings = await prisma.booking.findMany({
+    where: {
+      roomId: +roomId,
+      bookingDate: new Date(date),
+      status: "CONFIRMED",
+    },
+  });
+
+  // Calculate availability based on existing bookings and requested party size
+  const totalBookedRooms = bookings.reduce(
+    (total, booking) => total + (booking.roomQuantity ?? 0),
+    0
   );
-  res.status(response.statusCode).json(response);
+
+  const requestedQuantity = Number(quantity);
+
+  const isAvailable =
+    totalBookedRooms + requestedQuantity <= room.quantity!;
+
+  const availAbality = room.quantity - totalBookedRooms;
+
+  const response = new HTTPSuccessResponse(
+    "Table availability checked successfully",
+    200,
+    { isAvailable, availAbality: availAbality }
+  );
+
+  return res.status(response.statusCode).json(response);
 };

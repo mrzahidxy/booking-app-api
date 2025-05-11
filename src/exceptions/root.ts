@@ -47,4 +47,6 @@ export enum ErrorCode {
 
   BAD_REQUEST = 7001,
   REVIEW_NOT_FOUND = 7002,
+  BOOKING_NOT_FOUND = 7003,
+  NOT_ENOUGH_ROOMS = 7004,
 }
