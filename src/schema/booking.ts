@@ -47,15 +47,15 @@ export const reservationSchema = z.object({
     //     }),
 });
 
-export const updateStatusSchema = z.object({
+export const bookingStatusSchema = z.object({
     bookingId: z.string().refine((id) => !isNaN(Number(id)) && Number(id) > 0, {
         message: "bookingId must be a positive integer",
     }),
-    status: z
-        .string()
-        .refine((val) => Object.values(BookingStatus).includes(val as any), {
-            message: `Status must be one of: ${Object.values(BookingStatus).join(
-                ", "
-            )}`,
-        }),
+    status:z.enum(["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"]),
+        // .string()
+        // .refine((val) => Object.values(BookingStatus).includes(val as any), {
+        //     message: `Status must be one of: ${Object.values(BookingStatus).join(
+        //         ", "
+        //     )}`,
+        // }),
 });

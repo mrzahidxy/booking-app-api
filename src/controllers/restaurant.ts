@@ -3,8 +3,7 @@ import prisma from "../connect";
 import { HTTPSuccessResponse } from "../helpers/success-response";
 import { NotFoundException } from "../exceptions/not-found";
 import { ErrorCode } from "../exceptions/root";
-import { InternalException } from "../exceptions/internal-exception";
-import { reservationSchema, updateStatusSchema } from "../schema/booking";
+import { reservationSchema, bookingStatusSchema } from "../schema/booking";
 import { BadRequestException } from "../exceptions/bad-request";
 import {
   formatPaginationResponse,
@@ -275,7 +274,7 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
   const { status } = req.body;
 
   // Validate request data
-  const validationResult = updateStatusSchema.safeParse({
+  const validationResult = bookingStatusSchema.safeParse({
     bookingId: id,
     status,
   });

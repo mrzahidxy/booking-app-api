@@ -65,6 +65,7 @@ model Room {
   price     Float
   image     String[]
   roomType  RoomType  @default(SINGLE)
+  quantity  Int @default(1)
   amenities String[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -110,6 +111,7 @@ model Booking {
   restaurantId Int?
   bookingDate  DateTime
   totalPrice   Float
+  roomQuantity     Int?
   partySize    Int?
   timeSlot     String?
   status       BookingStatus @default(PENDING)
