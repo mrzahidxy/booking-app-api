@@ -227,11 +227,11 @@ export const searchHotels = async (req: Request, res: Response) => {
   });
 
 
-  if (!hotels || hotels.length === 0) {
-    throw new NotFoundException("No hotels found", ErrorCode.HOTEL_NOT_FOUND);
+  if (!hotels) {
+     throw new NotFoundException("Something went wrong", 404)
   }
 
-  const formattedResponse = formatPaginationResponse(hotels, totalHotels, page, limit);
+  const formattedResponse = formatPaginationResponse(hotels ?? [], totalHotels, page, limit);
 
   const response = new HTTPSuccessResponse(
     "Hotels fetched successfully",
