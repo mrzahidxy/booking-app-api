@@ -9,17 +9,32 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  phone     String?
-  password  String
-  createdAt DateTime  @default(now())
-  name      String?
-  roleId    Int?
-  updateAt  DateTime  @updatedAt
-  bookings  Booking[]
-  Role      Role?     @relation(fields: [roleId], references: [id])
-  Review    Review[]
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
+  phone        String?
+  password     String
+  createdAt    DateTime       @default(now())
+  name         String?
+  roleId       Int?
+  updateAt     DateTime       @updatedAt
+  bookings     Booking[]
+  Role         Role?          @relation(fields: [roleId], references: [id])
+  Review       Review[]
+  Notification Notification[]
+  fcmToken     String?        @unique
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  title     String
+  body      String
+  metadata  Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
 }
 
 model Role {
@@ -65,7 +80,7 @@ model Room {
   price     Float
   image     String[]
   roomType  RoomType  @default(SINGLE)
-  quantity  Int @default(1)
+  quantity  Int       @default(1)
   amenities String[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -74,19 +89,19 @@ model Room {
 }
 
 model Restaurant {
-  id          Int       @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   name        String
   description String?
   location    String
   timeSlots   TimeSlotType[]
   image       String[]
   cuisine     String[]
-  ratings     Float     @default(0.0)
+  ratings     Float          @default(0.0)
   reviews     Review[]
   seats       Int?
   menu        Json?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   bookings    Booking[]
 }
 
@@ -111,7 +126,7 @@ model Booking {
   restaurantId Int?
   bookingDate  DateTime
   totalPrice   Float
-  roomQuantity     Int?
+  roomQuantity Int?
   partySize    Int?
   timeSlot     String?
   status       BookingStatus @default(PENDING)

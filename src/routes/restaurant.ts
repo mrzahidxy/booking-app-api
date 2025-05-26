@@ -32,7 +32,7 @@ restaurantRoutes.post(
 restaurantRoutes.put(
   "/:id",
   authMiddleware,
-  checkPermission("UPDATE_RESTAURANT"),
+  // checkPermission("UPDATE_RESTAURANT"),
   upload.single("image"),
   asyncHandler(updateRestaurant)
 );

@@ -28,7 +28,7 @@ export const createRestaurant = async (req: Request, res: Response) => {
 
 export const updateRestaurant = async (req: Request, res: Response) => {
   const restaurantId = +req.params.id;
-  const { name, location, cuisine, seats, menu } = req.body;
+  const { name, location, cuisine, seats, menu, timeSlots } = req.body;
   // Check if an image file was uploaded
   const imageUrl = req.file ? req.file.path : null;
 
@@ -38,9 +38,10 @@ export const updateRestaurant = async (req: Request, res: Response) => {
   if (name) restaurantData.name = name;
   if (location) restaurantData.location = location;
   if (cuisine) restaurantData.cuisine = cuisine;
-  if (seats) restaurantData.seats = +seats; // Convert seats to a number
+  if (seats) restaurantData.seats = +seats; 
   if (menu) restaurantData.menu = menu;
   if (imageUrl) restaurantData.image = imageUrl;
+  if (timeSlots) restaurantData.timeSlots = timeSlots;
 
   const restaurant = await prisma.restaurant.update({
     where: { id: restaurantId },

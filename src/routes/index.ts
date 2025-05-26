@@ -7,6 +7,7 @@ import userRoutes from "./user";
 import reviewRoutes from "./review";
 import { ImageRoutes } from "./image";
 import { bookingRoute } from "./booking";
+import notificationRoutes from "./notification";
 
 
 const rootRouter: Router = Router();
@@ -19,5 +20,6 @@ rootRouter.use('/users', userRoutes)
 rootRouter.use('/reviews', reviewRoutes)
 rootRouter.use('/images', ImageRoutes)
 rootRouter.use('/bookings', bookingRoute)
+rootRouter.use('/notifications', notificationRoutes)
 
 export default rootRouter

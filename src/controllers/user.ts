@@ -73,3 +73,23 @@ export const updateUser = async (req: Request, res: Response) => {
 
   res.status(response.statusCode).json(response);
 };
+
+// save fcm token for user notification
+export const saveFcmToken = async (req: Request, res: Response) => {
+  const userId = Number(req.user?.id);
+  const { fcmToken } = req.body;
+
+  // ✅ Basic validation
+  if (!userId || !fcmToken) {
+    const error = new NotFoundException("User ID and FCM token are required", 400);
+    return res.status(error.statusCode).json(error);
+  }
+
+  const saveFcmToken = await prisma.user.update({
+    where: { id: userId },
+    data: { fcmToken },
+  });
+
+  const response = new HTTPSuccessResponse("FCM token saved successfully", 200, saveFcmToken);
+  return res.status(response.statusCode).json(response);
+}
