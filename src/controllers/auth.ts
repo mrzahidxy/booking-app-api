@@ -15,7 +15,7 @@ export const signup = async (
   next: NextFunction
 ) => {
   SignUpSchema.parse(req.body);
-  const { email, password } = req.body;
+  const { email, password, name } = req.body;
 
   let user = await prisma.user.findFirst({
     where: { email },
@@ -30,10 +30,16 @@ export const signup = async (
     );
   }
 
+  let userRoleId = await prisma.role.findUnique({
+    where: { name: "User" },
+  });
+
   user = await prisma.user.create({
     data: {
       email,
       password: hashSync(password, 10),
+      name,
+      roleId: userRoleId?.id,
     },
   });
 
@@ -58,7 +64,7 @@ export const login = async (
       name: true,
       phone: true,
       password: true,
-      Role: {
+      role: {
         select: {
           name: true,
         },
@@ -81,11 +87,11 @@ export const login = async (
 
   const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "1d" });
 
-  const { password: userPassword, Role, ...rest } = user;
+  const { password: userPassword, role,  ...rest } = user;
 
   const response = new HTTPSuccessResponse("Login successfully", 201, {
     ...rest,
-    role: Role?.name,
+    role: role?.name,
     token,
   });
   res.status(response.statusCode).json(response);

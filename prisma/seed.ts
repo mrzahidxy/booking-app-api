@@ -1,94 +1,121 @@
-// prisma/seed.ts
-import prisma  from '../src/connect';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
-async function main() {
-  // Add/Update few initial permissions on DB
-  const permissions = [
-    { name: "CREATE_USER" },
-    { name: "UPDATE_USER" },
-    { name: "GET_USER" },
-    { name: "DELETE_USER" },
-    { name: "CREATE_ROLE" },
-    { name: "UPDATE_ROLE" },
-    { name: "GET_ROLE" },
-    { name: "DELETE_ROLE" },
-    { name: "CREATE_PERMISSION" },
-    { name: "UPDATE_PERMISSION" },
-    { name: "GET_PERMISSION" },
-    { name: "DELETE_PERMISSION" },
-    { name: "ASSIGN_PERMISSION" },
-    { name: "GET_ASSIGNED_PERMISSION" },
-    { name: "ASSIGN_ROLE" },
-    { name: "UPDATE_ASSIGN_ROLE" },
-  ];
+const prisma = new PrismaClient();
 
-  // Upsert Permissions
-  for (const perm of permissions) {
+const permissions = [
+  "CREATE_USER",
+  "UPDATE_USER",
+  "GET_USER",
+  "DELETE_USER",
+  "CREATE_ROLE",
+  "UPDATE_ROLE",
+  "GET_ROLE",
+  "DELETE_ROLE",
+  "CREATE_PERMISSION",
+  "UPDATE_PERMISSION",
+  "GET_PERMISSION",
+  "DELETE_PERMISSION",
+  "ASSIGN_PERMISSION",
+  "GET_ASSIGNED_PERMISSION",
+  "ASSIGN_ROLE",
+  "UPDATE_ASSIGN_ROLE",
+];
+
+const roles = [
+  { name: "Admin", permissions: permissions },
+  {
+    name: "Moderator",
+    permissions: [
+      "GET_USER",
+      "GET_ROLE",
+      "GET_PERMISSION",
+      "UPDATE_USER",
+      "UPDATE_ROLE",
+    ],
+  },
+  {
+    name: "Editor",
+    permissions: [
+      "CREATE_USER",
+      "UPDATE_USER",
+      "GET_USER",
+      "CREATE_ROLE",
+      "UPDATE_ROLE",
+    ],
+  },
+  { name: "User", permissions: ["GET_USER"] },
+];
+
+async function createDefaultPermissions() {
+  for (const permission of permissions) {
     await prisma.permission.upsert({
-      where: { name: perm.name },
+      where: { name: permission },
       update: {},
-      create: { name: perm.name },
+      create: { name: permission },
     });
   }
+}
 
-  // Fetch all permissions
-  const allPermissions = await prisma.permission.findMany();
+async function createDefaultRoles() {
+  for (const role of roles) {
+    const rolePermissions = await prisma.permission.findMany({
+      where: {
+        name: {
+          in: role.permissions,
+        },
+      },
+    });
 
-  // Upsert Admin Role
-  const adminRole = await prisma.role.upsert({
-    where: { name: 'Admin' },
-    update: {},
-    create: { name: 'Admin' },
-  });
-
-  // Payload for RolePermissions
-  const adminRolePermissions = allPermissions.map((perm) => ({
-    roleId: adminRole.id,
-    permissionId: perm.id,
-  }));
-
-  // Delete existing RolePermissions for Admin to prevent duplicates
-  await prisma.rolePermission.deleteMany({
-    where: { roleId: adminRole.id },
-  });
-
-  // Create RolePermissions
-  await prisma.rolePermission.createMany({
-    data: adminRolePermissions,
-  });
-
-  // Optionally, create an Admin User
-  const adminEmail = 'admin@example.com';
-  const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
-
-  if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash('password123', 10);
-
-    const newAdmin = await prisma.user.create({
-      data: {
-        email: adminEmail,
-        password: hashedPassword,
-        Role: {
-          connect: {
-            id: adminRole.id,
+    await prisma.role.upsert({
+      where: { name: role.name },
+      update: {}, // No need to update if role already exists
+      create: {
+        name: role.name,
+        rolePermission: {
+          createMany: {
+            data: rolePermissions.map((permission) => ({
+              permissionId: permission.id,
+            })),
+            skipDuplicates: true, // This will skip duplicate permission entries for the role
           },
         },
       },
     });
 
-    console.log('Admin user created:', newAdmin.email);
-  } else {
-    console.log('Admin user already exists.');
   }
+}
 
-  console.log('Seed completed successfully.');
+// Create default Admin user
+async function createAdminUser() {
+  const adminRole = await prisma.role.findUnique({
+    where: { name: 'Admin' },
+  });
+
+  const hashedPassword = await bcrypt.hash('Password@123', 10); // Default password for admin
+
+  await prisma.user.upsert({
+    where: { email: 'admin@example.com' },
+    update: {},
+    create: {
+      email: 'admin@example.com',
+      password: hashedPassword,
+      name: 'Admin User',
+      roleId: adminRole?.id, // Assign the Admin role
+    },
+  });
+}
+
+async function main() {
+  await createDefaultPermissions();
+  await createDefaultRoles();
+  await createAdminUser();
+  console.log('Default permissions, roles, and admin user created successfully!');
 }
 
 main()
   .catch((e) => {
     console.error(e);
-    process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
