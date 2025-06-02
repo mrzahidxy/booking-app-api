@@ -213,7 +213,7 @@ export const bookingStatusUpdate = async (req: Request, res: Response) => {
       data: { status },
     });
 
-    const notif = await prisma.notification.create({
+  await prisma.notification.create({
       data: {
         userId: existingBooking.userId,
         title: "Booking status updated",

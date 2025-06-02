@@ -29,7 +29,7 @@ export const getNotifications = async (req: Request, res: Response) => {
     const formattedResponse = formatPaginationResponse(notification, totalNotifications, page, limit);
 
     const response = new HTTPSuccessResponse(
-        "Hotels fetched successfully",
+        "Notifications fetched successfully",
         200,
         formattedResponse
     );
