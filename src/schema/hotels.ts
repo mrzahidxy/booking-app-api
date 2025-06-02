@@ -9,6 +9,7 @@ export const roomSchema = z.object({
   price: z.number().positive("Price must be a positive number"),
   image: z.array(z.string()).optional(),
   amenities: z.array(z.string()).optional(), // Ensures array of string
+  quantity: z.number().optional(),
 });
 
 // ✅ Hotel Schema
@@ -19,6 +20,7 @@ export const hotelSchema = z.object({
   description: z.string().optional(),
   amenities: z.array(z.string()).optional(), // Ensures array of strings
   rooms: z.array(roomSchema).optional(), // ✅ Allows including rooms
+
 });
 
 
