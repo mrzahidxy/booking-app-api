@@ -10,6 +10,8 @@ import {
   handleValidationError,
 } from "../utils/common-method";
 import { restaurantSchema } from "../schema/restaurant";
+import { Prisma } from "@prisma/client";
+
 
 export const createRestaurant = async (req: Request, res: Response) => {
   const validation = restaurantSchema.safeParse(req.body);
@@ -26,7 +28,7 @@ export const createRestaurant = async (req: Request, res: Response) => {
 
 export const updateRestaurant = async (req: Request, res: Response) => {
   const restaurantId = +req.params.id;
-  const { name, location, cuisine, seats, menu } = req.body;
+  const { name, location, cuisine, seats, menu, timeSlots } = req.body;
   // Check if an image file was uploaded
   const imageUrl = req.file ? req.file.path : null;
 
@@ -36,9 +38,10 @@ export const updateRestaurant = async (req: Request, res: Response) => {
   if (name) restaurantData.name = name;
   if (location) restaurantData.location = location;
   if (cuisine) restaurantData.cuisine = cuisine;
-  if (seats) restaurantData.seats = +seats; // Convert seats to a number
+  if (seats) restaurantData.seats = +seats; 
   if (menu) restaurantData.menu = menu;
   if (imageUrl) restaurantData.image = imageUrl;
+  if (timeSlots) restaurantData.timeSlots = timeSlots;
 
   const restaurant = await prisma.restaurant.update({
     where: { id: restaurantId },
@@ -77,46 +80,62 @@ export const getAllRestaurants = async (req: Request, res: Response) => {
 };
 
 // // Search Restaurants by Cuisine, Location, Price Range, and Availability
+
 export const searchRestaurants = async (req: Request, res: Response) => {
-  const { name, location, ratings, cuisine } = req.query;
-  // Fetch restaurants with the constructed filters
+  // Validate and parse query parameters
+  const { name, location, ratings, cuisine, page = 1, limit = 10 } = req.query;
+
+  const pageNumber = parseInt(page as string, 10) || 1;
+  const pageSize = parseInt(limit as string, 10) || 10;
+
+  // Construct filter object based on query params
+  const whereClause = {
+    ...(location && {
+      location: {
+        contains: location as string,
+        mode: Prisma.QueryMode.insensitive,
+      },
+    }),
+    ...(ratings && {
+      ratings: Number(ratings),
+    }),
+    ...(name && {
+      name: {
+        contains: name as string,
+        mode:  Prisma.QueryMode.insensitive,
+      },
+    }),
+    // Uncomment if/when cuisine is supported
+    // ...(cuisine && {
+    //   cuisine: {
+    //     hasEvery: Array.isArray(cuisine) ? cuisine : [cuisine as string],
+    //   },
+    // }),
+  };
+
+  // Check if restaurants exist first before fetching count
   const restaurants = await prisma.restaurant.findMany({
-    where: {
-      ...(location && {
-        location: {
-          contains: location as string,
-          mode: "insensitive",
-        },
-      }),
-      // ...(cuisine && {
-      //   cuisine: {
-      //     contains: cuisine as string[],
-      //     mode: "insensitive",
-      //   },
-      // }),
-      ...(ratings && {
-        ratings: +ratings,
-      }),
-      ...(name && {
-        name: {
-          contains: name as string,
-          mode: "insensitive",
-        },
-      }),
-    },
-    include: {
-      bookings: true, // Include bookings
-    },
+    where: whereClause,
+    skip: (pageNumber - 1) * pageSize,
+    take: pageSize,
   });
 
-  // Send success response
-  const response = new HTTPSuccessResponse(
-    "Restaurants fetched successfully",
-    200,
-    restaurants
-  );
+  // If no restaurants found, return an error
+  if (!restaurants) {
+    throw new NotFoundException("Something went wrong", 404)
+  }
+
+  // Get total count for pagination
+  const totalRestaurants = await prisma.restaurant.count({ where: whereClause });
+
+  // Format and structure the response with pagination data
+  const formattedResponse = formatPaginationResponse(restaurants ?? [], totalRestaurants, pageNumber, pageSize);
+
+  // Send the response back
+  const response = new HTTPSuccessResponse("Restaurants fetched successfully", 200, formattedResponse);
   return res.status(response.statusCode).json(response);
 };
+
 
 // // Get Detailed Restaurant Information
 export const getRestaurantDetails = async (req: Request, res: Response) => {
@@ -350,3 +369,7 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
     booking: updatedBooking,
   });
 };
+
+
+
+

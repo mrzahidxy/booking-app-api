@@ -19,7 +19,7 @@ const upload = multer({ storage: storage });
 const restaurantRoutes: Router = Router();
 
 restaurantRoutes.get("/", asyncHandler(getAllRestaurants));
-restaurantRoutes.get("/search", asyncHandler(searchRestaurants));
+restaurantRoutes.get("/search/result", asyncHandler(searchRestaurants));
 restaurantRoutes.get("/:id", asyncHandler(getRestaurantDetails));
 
 restaurantRoutes.post(
@@ -32,7 +32,7 @@ restaurantRoutes.post(
 restaurantRoutes.put(
   "/:id",
   authMiddleware,
-  checkPermission("UPDATE_RESTAURANT"),
+  // checkPermission("UPDATE_RESTAURANT"),
   upload.single("image"),
   asyncHandler(updateRestaurant)
 );

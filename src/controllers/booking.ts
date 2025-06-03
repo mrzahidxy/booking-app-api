@@ -1,12 +1,16 @@
 import { Request, Response } from "express";
 import { roomBookingSchema } from "../schema/hotels";
-import { formatPaginationResponse, handleValidationError } from "../utils/common-method";
+import {
+  formatPaginationResponse,
+  handleValidationError,
+} from "../utils/common-method";
 import prisma from "../connect";
 import { NotFoundException } from "../exceptions/not-found";
 import { ErrorCode } from "../exceptions/root";
 import { HTTPSuccessResponse } from "../helpers/success-response";
 import { bookingStatusSchema } from "../schema/booking";
 import { BadRequestException } from "../exceptions/bad-request";
+import { messaging } from "../config/firebaseAdmin";
 
 // Get User Bookings
 export const getUserBookings = async (req: Request, res: Response) => {
@@ -15,14 +19,33 @@ export const getUserBookings = async (req: Request, res: Response) => {
   const skip = (page - 1) * limit;
 
   // Get User Bookings
-  const bookings = await prisma.booking.findMany({ skip, take: limit, where: { userId: req.user?.id }, include: { room: { include: { hotel: true } }, restaurant: true, user: true } });
-  const totalBookings = await prisma.booking.count({ where: { userId: req.user?.id } });
+  const bookings = await prisma.booking.findMany({
+    skip,
+    take: limit,
+    where: { userId: req.user?.id },
+    include: {
+      room: { include: { hotel: true } },
+      restaurant: true,
+      user: true,
+    },
+  });
+  const totalBookings = await prisma.booking.count({
+    where: { userId: req.user?.id },
+  });
 
   if (!bookings || bookings.length === 0) {
-    throw new NotFoundException("No booking found", ErrorCode.BOOKING_NOT_FOUND);
+    throw new NotFoundException(
+      "No booking found",
+      ErrorCode.BOOKING_NOT_FOUND
+    );
   }
 
-  const formattedResponse = formatPaginationResponse(bookings, totalBookings, page, limit);
+  const formattedResponse = formatPaginationResponse(
+    bookings,
+    totalBookings,
+    page,
+    limit
+  );
 
   const response = new HTTPSuccessResponse(
     "Bookings fetched successfully",
@@ -30,7 +53,7 @@ export const getUserBookings = async (req: Request, res: Response) => {
     formattedResponse
   );
   return res.status(response.statusCode).json(response);
-}
+};
 
 // Get All Bookings
 export const getBookings = async (req: Request, res: Response) => {
@@ -44,7 +67,7 @@ export const getBookings = async (req: Request, res: Response) => {
     prisma.booking.findMany({
       skip,
       take: limit,
-      orderBy: { createdAt: 'desc' },            // ← newest first
+      orderBy: { createdAt: "desc" }, // ← newest first
       include: {
         room: { include: { hotel: true } },
         restaurant: true,
@@ -57,7 +80,12 @@ export const getBookings = async (req: Request, res: Response) => {
     throw new NotFoundException("No hotels found", ErrorCode.ROLE_NOT_FOUND);
   }
 
-  const formattedResponse = formatPaginationResponse(bookings, totalBookings, page, limit);
+  const formattedResponse = formatPaginationResponse(
+    bookings,
+    totalBookings,
+    page,
+    limit
+  );
 
   const response = new HTTPSuccessResponse(
     "Hotels fetched successfully",
@@ -65,8 +93,7 @@ export const getBookings = async (req: Request, res: Response) => {
     formattedResponse
   );
   return res.status(response.statusCode).json(response);
-}
-
+};
 
 // Update booking status
 export const bookingStatusUpdate = async (req: Request, res: Response) => {
@@ -89,8 +116,10 @@ export const bookingStatusUpdate = async (req: Request, res: Response) => {
     // Check if booking exists
     const existingBooking = await prisma.booking.findUnique({
       where: { id: +id },
+      include: {
+        user: true,
+      },
     });
-
 
     if (!existingBooking) {
       throw new NotFoundException(
@@ -100,7 +129,6 @@ export const bookingStatusUpdate = async (req: Request, res: Response) => {
     }
 
     if (validStatus === "CONFIRMED") {
-
       // Check if booking is hotel
       if (type === "room") {
         const room = await tx.room.findUnique({
@@ -108,7 +136,10 @@ export const bookingStatusUpdate = async (req: Request, res: Response) => {
         });
 
         if (!room) {
-          throw new NotFoundException("Room not found", ErrorCode.ROOM_NOT_FOUND);
+          throw new NotFoundException(
+            "Room not found",
+            ErrorCode.ROOM_NOT_FOUND
+          );
         }
 
         const roomAvailable = room.quantity;
@@ -164,7 +195,8 @@ export const bookingStatusUpdate = async (req: Request, res: Response) => {
 
         const totalBookedSeats = seatBooked._sum.partySize ?? 0;
         const requestedPartySize = existingBooking.partySize ?? 1;
-        const isAvailable = totalBookedSeats + requestedPartySize <= seatAvailable;
+        const isAvailable =
+          totalBookedSeats + requestedPartySize <= seatAvailable;
 
         if (!isAvailable) {
           throw new BadRequestException(
@@ -176,10 +208,40 @@ export const bookingStatusUpdate = async (req: Request, res: Response) => {
     }
 
     // Update booking status
-    return tx.booking.update({
+    const updatedBooking = await tx.booking.update({
       where: { id: +id },
-      data: { status: validStatus },
+      data: { status },
     });
+
+    const notif = await prisma.notification.create({
+      data: {
+        userId: existingBooking.userId,
+        title: "Booking status updated",
+        body: `Your booking is now ${status}`,
+        metadata: { bookingId: existingBooking.id },
+      },
+    });
+
+    // Send notification after booking status is updated
+    const fcmToken = existingBooking.user.fcmToken;
+
+    if (fcmToken) {
+      const message = {
+        notification: {
+          title: "Booking Status Updated",
+          body: `Your booking status has been updated to ${status}`,
+        },
+        token: fcmToken,
+      };
+
+      try {
+        await messaging.send(message);
+      } catch (error) {
+        console.error("Error sending notification:", error);
+      }
+    }
+
+    return updatedBooking;
   });
 
   // Send success response

@@ -16,7 +16,7 @@ export const hotelRoutes: Router = Router();
 
 hotelRoutes.get("/", asyncHandler(getHotels));
 hotelRoutes.get("/:id", asyncHandler(getHotelDetails));
-hotelRoutes.get("/search/result", searchHotels);
+hotelRoutes.get("/search/result",  asyncHandler(searchHotels));
 
 
 hotelRoutes.post(
