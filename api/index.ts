@@ -1,12 +1,22 @@
 import express, { Express} from "express";
+import morgan from "morgan";
 import { PORT } from "../src/secret";
 import rootRouter from "../src/routes";
 import cors from 'cors'
 import { errorMiddleware } from "../src/middleware/error";
 import { healthCheck } from "../src/controllers/healthCheck";
+import logger from "../src/utils/logger";
 
 const app: Express = express();
-app.use(express.json());
+
+// Morgan setup
+app.use(morgan("dev", {
+  stream: {
+    write: (message) => logger.http(message.trim()),
+  },
+}));
+
+app.use(express.json())
 app.use(cors({ origin: '*' }))
 
 
