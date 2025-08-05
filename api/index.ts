@@ -6,8 +6,16 @@ import cors from 'cors'
 import { errorMiddleware } from "../src/middleware/error";
 import { healthCheck } from "../src/controllers/healthCheck";
 import logger from "../src/utils/logger";
+import { raw } from "body-parser";
+import { stripeWebhook } from "../src/controllers/payment";
 
 const app: Express = express();
+
+app.post(
+  "/api/payments/webhook",
+  raw({ type: "application/json" }),   // <— gives you Buffer in req.body
+  stripeWebhook
+);
 
 // Morgan setup
 app.use(morgan("dev", {

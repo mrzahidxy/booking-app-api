@@ -47,7 +47,7 @@ model Role {
 
 model Permission {
   id             Int              @id @default(autoincrement())
-  name           String   @unique
+  name           String           @unique
   rolePermission RolePermission[]
 }
 
@@ -136,6 +136,21 @@ model Booking {
   restaurant   Restaurant?   @relation(fields: [restaurantId], references: [id])
   room         Room?         @relation(fields: [roomId], references: [id])
   user         User          @relation(fields: [userId], references: [id])
+  payment      Payment[]
+}
+
+model Payment {
+  id                    Int      @id @default(autoincrement())
+  bookingId             Int
+  amount                Float
+  currency              String
+  status                String
+  stripeSessionId       String   @unique
+  stripePaymentIntentId String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id])
 }
 
 enum BookingStatus {
@@ -160,3 +175,8 @@ enum TimeSlotType {
   NIGHT
 }
 
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
