@@ -30,8 +30,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      - name: Build server artifacts
-        run: npm run build:server
-
-      - name: Deploy server to Vercel Preview
-        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --environment=preview
+      - name: Build and deploy with Vercel
+        run: |
+          vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --environment=preview
