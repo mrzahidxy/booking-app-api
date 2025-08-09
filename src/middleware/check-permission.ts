@@ -23,10 +23,10 @@ const checkPermission = (requiredPermission: string) => {
 
         const permissions = await prisma.permission.findMany({
           where: {
-            RolePermission: {
+            rolePermission: {
               some: {
                 role: {
-                  Users: { some: { id: userId } },
+                  users: { some: { id: userId } },
                 },
               },
             },
@@ -43,10 +43,10 @@ const checkPermission = (requiredPermission: string) => {
         const hasPermission = await prisma.permission.findFirst({
           where: {
             name: requiredPermission,
-            RolePermission: {
+            rolePermission: {
               some: {
                 role: {
-                  Users: { some: { id: userId } },
+                  users: { some: { id: userId } },
                 },
               },
             },

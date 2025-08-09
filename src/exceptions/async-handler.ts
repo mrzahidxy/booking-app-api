@@ -10,7 +10,7 @@ export const asyncHandler =
       if (error instanceof HTTPException) {
         exception = error;
       } else {
-        exception = new InternalException("Something went wrong", error, 500);
+        exception = new InternalException(error, error, 500);
       }
       next(exception);
     });

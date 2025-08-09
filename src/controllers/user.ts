@@ -40,6 +40,19 @@ export const getUserById = async (req: Request, res: Response) => {
     where: {
       id: +id,
     },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      createdAt: true,
+      updateAt: true,
+      bookings: true,
+      review: true,
+      notification: true,
+    },
+
   });
 
   if (!user) {

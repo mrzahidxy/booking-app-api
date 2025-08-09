@@ -1,4 +1,12 @@
 node_modules
-# Keep environment variables out of version control
+
 .env
+
+# Ignore all log files
+*.log
+
+# Ignore Firebase admin credentials
+src/config/firebase-admin.json
+
+# vercel
 .vercel

@@ -421,7 +421,7 @@ export const getRoleWiseUserList = async (req: Request, res: Response) => {
     skip,
     take: limit,
     include: {
-      Role: true
+      role: true
     }
   })
 
@@ -450,7 +450,7 @@ export const GetUserRoleById = async (req: Request, res: Response) => {
       id: +id,
     },
     include: {
-      Role: true
+      role: true
     }
   });
 

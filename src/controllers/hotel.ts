@@ -67,17 +67,17 @@ export const CreateUpdateHotel = async (req: Request, res: Response) => {
 
     // 🔄 **Process Each Room (Create or Update)**
     await Promise.all(
-      validRooms.map(async ({ id, roomType, price, image, amenities }) => {
+      validRooms.map(async ({ id, roomType, price, image, amenities, quantity }) => {
         if (id) {
           // ✅ Update Existing Room
           await prisma.room.update({
             where: { id },
-            data: { roomType, price: +price, image, amenities },
+            data: { roomType, price: +price, image, amenities, quantity },
           });
         } else {
           // ✅ Create New Room
           await prisma.room.create({
-            data: { hotelId: hotel.id, roomType, price: +price, image, amenities },
+            data: { hotelId: hotel.id, roomType, price: +price, image, amenities, quantity },
           });
         }
       })
@@ -287,7 +287,7 @@ export const checkRoomAvailability = async (
   const requestedQuantity = Number(quantity);
 
   const isAvailable =
-    totalBookedRooms + requestedQuantity <= room.quantity!;
+    totalBookedRooms + requestedQuantity <= room.quantity;
 
   const availAbality = room.quantity - totalBookedRooms;
 
