@@ -1,15 +1,19 @@
 import express, { Express} from "express";
 import morgan from "morgan";
-import { PORT } from "../src/secret";
-import rootRouter from "../src/routes";
+import { PORT } from "./secret";
+import rootRouter from "./routes";
 import cors from 'cors'
-import { errorMiddleware } from "../src/middleware/error";
-import { healthCheck } from "../src/controllers/healthCheck";
-import logger from "../src/utils/logger";
+import { errorMiddleware } from "./middleware/error";
+import { healthCheck } from "./controllers/healthCheck";
+import logger from "./utils/logger";
 import { raw } from "body-parser";
-import { stripeWebhook } from "../src/controllers/payment";
+import { stripeWebhook } from "./controllers/payment";
+import swaggerUi from 'swagger-ui-express';
+import specs from './config/swagger';
 
 const app: Express = express();
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 app.post(
   "/api/payments/webhook",
@@ -36,6 +40,7 @@ app.get("/health", healthCheck);
 
 app.listen(PORT, () => {
   console.log(`The app listening on port ${PORT}`);
+  console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
 });
 
 

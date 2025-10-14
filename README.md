@@ -2,66 +2,31 @@
 
 A modern full-stack web application to explore, search, and book hotels and restaurants with ease. Built with scalability, performance, and usability in mind.
 
----
+### 🎯 Target Users
+- People who love travel and food
+- Individuals seeking unique dining and accommodation experiences
+- Tourists looking for convenient booking solutions
+- Food enthusiasts exploring local cuisines around the world
 
-## 🚀 Features
+### 🌟 Key Features
+- 🔍 Search and filter hotels and restaurants by location, dates, and guest count
+- 📅 Real-time availability checking for bookings
+- 💳 Secure payment processing with Stripe integration
+- 🖼️ Image upload and management with Cloudinary
+- 👤 User authentication and authorization system
+- 📊 Admin APIs for managing listings and bookings
+- ⭐ Review and rating system APIs
+- 📦 Database management with Prisma ORM
+- 🛡️ Input validation with Zod schema validation
+- 📋 Logging and error handling with Winston
 
-- 🔍 Search hotels & restaurants by **name** and **location**
-- 📅 Book rooms with **calendar selection**
-- 👥 Select number of **guests**
-- 💼 Role-based access (Admin/User)
-- 📸 Upload multiple images with **Cloudinary**
-- 🛏️ Manage rooms per hotel
-- ✅ Form validation using **Formik** + **Yup/Zod**
-- 🔄 API caching, mutation & pagination with **React Query**
-- 🌙 Dark mode support
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **Next.js 14 (App Router)**
-- **React**
-- **Tailwind CSS**
-- **ShadCN UI**
-- **React Query**
-- **Formik + Yup**
-- **Zod (server validation)**
-
-### Backend
-- **Node.js + Express.js**
-- **Prisma ORM**
-- **PostgreSQL**
-- **Zod validation**
-- **Cloudinary (image upload)**
-
-### DevOps
-- **Vercel** (Frontend hosting)
-- **Render/AWS/Docker** (optional backend hosting)
-- **GitHub Actions** (CI/CD)
-- **Dotenv** for environment configuration
-
----
-
-## 📦 Installation
-
-```bash
-# Clone the repo
-git clone https://github.com/your-username/booking-app.git
-cd booking-app
-
-# Install dependencies
-npm install
-```
-
-Make sure PostgreSQL is running and `.env` is configured in both `client/` and `server/`.
-
-## 📸 Screenshots
-
-_You can add screenshots here later like:_
-
-
-## 📄 License
-
-MIT © [Your Name or Organization]
+### 🛠️ Technology Stack
+- **Backend**: Node.js with Express.js framework
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: JWT and Firebase Admin
+- **Validation**: Zod schema validation
+- **Image Storage**: Cloudinary
+- **Payments**: Stripe API
+- **Logging**: Winston
+- **Deployment**: Vercel compatible with various hosting options
+- **Language**: TypeScript
