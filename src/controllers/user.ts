@@ -5,6 +5,67 @@ import { formatPaginationResponse } from "../utils/common-method";
 import { ErrorCode } from "../exceptions/root";
 ;
 
+/**
+ * @openapi
+ * /users:
+ *   get:
+ *     summary: Get all users with pagination
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Users fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 statusCode:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           name:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                           phone:
+ *                             type: string
+ *                           role:
+ *                             type: string
+ *                     total:
+ *                       type: integer
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *       404:
+ *         description: No users found
+ */
 export const getUsers = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -32,7 +93,53 @@ export const getUsers = async (req: Request, res: Response) => {
   )
 }
 
-
+/**
+ * @openapi
+ * /users/{id}:
+ *   get:
+ *     summary: Get a user by ID
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 statusCode:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     name:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     phone:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     createdAt:
+ *                       type: string
+ *                     updateAt:
+ *                       type: string
+ *       404:
+ *         description: User not found
+ */
 export const getUserById = async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -68,6 +175,66 @@ export const getUserById = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 };
 
+/**
+ * @openapi
+ * /users/{id}:
+ *   put:
+ *     summary: Update a user by ID
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 statusCode:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     name:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     phone:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     createdAt:
+ *                       type: string
+ *                     updatedAt:
+ *                       type: string
+ *       404:
+ *         description: User not found
+ */
 export const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -87,6 +254,43 @@ export const updateUser = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 };
 
+/**
+ * @openapi
+ * /users/fcm:
+ *   put:
+ *     summary: Save FCM token for user notifications
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fcmToken:
+ *                 type: string
+ *             required:
+ *               - fcmToken
+ *     responses:
+ *       200:
+ *         description: FCM token saved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 statusCode:
+ *                   type: integer
+ *                 data:
+ *                   type: object
+ *       400:
+ *         description: User ID and FCM token are required
+ */
 // save fcm token for user notification
 export const saveFcmToken = async (req: Request, res: Response) => {
   const userId = Number(req.user?.id);
