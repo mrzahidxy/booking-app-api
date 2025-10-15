@@ -9,61 +9,6 @@ import { NotFoundException } from "../exceptions/not-found";
 import { JWT_SECRET } from "../secret";
 import { HTTPSuccessResponse } from "../helpers/success-response";
 
-/**
- * @openapi
- * /auth/signup:
- *   post:
- *     summary: Register a new user
- *     tags:
- *       - Authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 example: John Doe
- *               email:
- *                 type: string
- *                 format: email
- *                 example: john@example.com
- *               password:
- *                 type: string
- *                 format: password
- *                 example: password123
- *             required:
- *               - name
- *               - email
- *               - password
- *     responses:
- *       201:
- *         description: User registered successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: integer
- *                     name:
- *                       type: string
- *                     email:
- *                       type: string
- *                     role:
- *                       type: string
- *       409:
- *         description: Email already exists
- *       500:
- *         description: Internal server error
- */
 export const signup = async (
   req: Request,
   res: Response,
@@ -104,61 +49,6 @@ export const signup = async (
   res.status(response.statusCode).json(response);
 };
 
-/**
- * @openapi
- * /auth/login:
- *   post:
- *     summary: Authenticate a user
- *     tags:
- *       - Authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: john@example.com
- *               password:
- *                 type: string
- *                 format: password
- *                 example: password123
- *             required:
- *               - email
- *               - password
- *     responses:
- *       201:
- *         description: User logged in successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: integer
- *                     name:
- *                       type: string
- *                     email:
- *                       type: string
- *                     role:
- *                       type: string
- *                     token:
- *                       type: string
- *       401:
- *         description: Invalid credentials
- *       404:
- *         description: User not found
- *       500:
- *         description: Internal server error
- */
 export const login = async (
   req: Request,
   res: Response,
