@@ -522,3 +522,4 @@ export const assaignUserRole = async (req: Request, res: Response) => {
   );
   res.status(response.statusCode).json(response);
 };
+

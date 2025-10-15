@@ -11,20 +11,22 @@ export const authMiddleware = async (
   res: Response,
   next: NextFunction
 ) => {
-  const token = req.headers.authorization;
-  
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     next(
       new UnauthorizedException(
         "No token provided",
         ErrorCode.NO_TOKEN_PROVIDED
       )
     );
+    return;
   }
 
+  const token = authHeader.substring(7); // Remove "Bearer " prefix
+
   try {
-    const payload = jwt.verify(token!, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET);
 
     const user = await prisma.user.findFirst({
       where: { id: (payload as any).id },
@@ -33,19 +35,20 @@ export const authMiddleware = async (
     if (!user) {
       next(
         new UnauthorizedException(
-          "No token provided",
-          ErrorCode.NO_TOKEN_PROVIDED
+          "User not found",
+          ErrorCode.USER_NOT_FOUND
         )
       );
-    } 
+      return;
+    }
 
     req.user = user as User;
     next();
   } catch (error) {
     next(
       new UnauthorizedException(
-        "No token provided",
-        ErrorCode.NO_TOKEN_PROVIDED
+        "Invalid token",
+        ErrorCode.INVALID_TOKEN
       )
     );
   }

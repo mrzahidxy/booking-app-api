@@ -12,6 +12,7 @@ import { bookingStatusSchema } from "../schema/booking";
 import { BadRequestException } from "../exceptions/bad-request";
 import { messaging } from "../config/firebaseAdmin";
 
+
 // Get User Bookings
 export const getUserBookings = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
@@ -55,6 +56,7 @@ export const getUserBookings = async (req: Request, res: Response) => {
   return res.status(response.statusCode).json(response);
 };
 
+
 // Get All Bookings
 export const getBookings = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
@@ -94,6 +96,7 @@ export const getBookings = async (req: Request, res: Response) => {
   );
   return res.status(response.statusCode).json(response);
 };
+
 
 // Update booking status
 export const bookingStatusUpdate = async (req: Request, res: Response) => {
@@ -251,6 +254,7 @@ export const bookingStatusUpdate = async (req: Request, res: Response) => {
   });
 };
 
+
 // Book a Room
 export const bookRoom = async (req: Request, res: Response) => {
   // Validate request data
@@ -297,3 +301,4 @@ export const bookRoom = async (req: Request, res: Response) => {
   );
   res.status(response.statusCode).json(response);
 };
+

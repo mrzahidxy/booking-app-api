@@ -5,6 +5,7 @@ import { formatPaginationResponse } from "../utils/common-method";
 import { ErrorCode } from "../exceptions/root";
 ;
 
+
 export const getUsers = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -31,6 +32,7 @@ export const getUsers = async (req: Request, res: Response) => {
     )
   )
 }
+
 
 
 export const getUserById = async (req: Request, res: Response) => {
@@ -68,6 +70,7 @@ export const getUserById = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 };
 
+
 export const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -86,6 +89,7 @@ export const updateUser = async (req: Request, res: Response) => {
 
   res.status(response.statusCode).json(response);
 };
+
 
 // save fcm token for user notification
 export const saveFcmToken = async (req: Request, res: Response) => {
@@ -106,3 +110,4 @@ export const saveFcmToken = async (req: Request, res: Response) => {
   const response = new HTTPSuccessResponse("FCM token saved successfully", 200, saveFcmToken);
   return res.status(response.statusCode).json(response);
 }
+

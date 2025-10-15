@@ -16,3 +16,4 @@ export const uploadImage = async (req: Request, res: Response) => {
     const response = new HTTPSuccessResponse("Image uploaded successfully", 200, iamgeUrl);
     return res.status(response.statusCode).send(response);
 };
+

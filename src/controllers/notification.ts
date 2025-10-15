@@ -48,3 +48,4 @@ export const readNotification = async (req: Request, res: Response) => {
     );
 };
 
+

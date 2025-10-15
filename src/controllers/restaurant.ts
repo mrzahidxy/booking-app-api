@@ -26,6 +26,7 @@ export const createRestaurant = async (req: Request, res: Response) => {
   );
 };
 
+
 export const updateRestaurant = async (req: Request, res: Response) => {
   const restaurantId = +req.params.id;
   const { name, location, cuisine, seats, menu, timeSlots } = req.body;
@@ -52,6 +53,7 @@ export const updateRestaurant = async (req: Request, res: Response) => {
     new HTTPSuccessResponse("Restaurant updated successfully", 200, restaurant)
   );
 };
+
 
 export const getAllRestaurants = async (req: Request, res: Response) => {
   const { page = 1, limit = 10 } = req.query;
@@ -80,6 +82,7 @@ export const getAllRestaurants = async (req: Request, res: Response) => {
 };
 
 // // Search Restaurants by Cuisine, Location, Price Range, and Availability
+
 
 export const searchRestaurants = async (req: Request, res: Response) => {
   // Validate and parse query parameters
@@ -137,7 +140,8 @@ export const searchRestaurants = async (req: Request, res: Response) => {
 };
 
 
-// // Get Detailed Restaurant Information
+
+// Get Detailed Restaurant Information
 export const getRestaurantDetails = async (req: Request, res: Response) => {
   const restaurantId = +req.params.id;
   const restaurant = await prisma.restaurant.findUnique({
@@ -161,6 +165,7 @@ export const getRestaurantDetails = async (req: Request, res: Response) => {
   );
   res.status(response.statusCode).json(response);
 };
+
 
 // Check table availability for a restaurant
 export const checkTableAvailability = async (
@@ -217,6 +222,7 @@ export const checkTableAvailability = async (
 
   return res.status(response.statusCode).json(response);
 };
+
 
 // Reserve a table at a restaurant
 export const reserveTable = async (req: Request, res: Response) => {
@@ -286,6 +292,7 @@ export const reserveTable = async (req: Request, res: Response) => {
     .status(201)
     .json(new HTTPSuccessResponse("Table reserved successfully", 201, booking));
 };
+
 
 // Update booking status
 export const updateBookingStatus = async (req: Request, res: Response) => {
@@ -369,6 +376,7 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
     booking: updatedBooking,
   });
 };
+
 
 
 

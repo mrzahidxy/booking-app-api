@@ -1,0 +1,1 @@
+export { default as specs } from './swagger.config';
