@@ -17,83 +17,6 @@ import { BadRequestException } from "../exceptions/bad-request";
 
 
 
-/**
- * @openapi
- * /hotels/{id}:
- *   post:
- *     summary: Create or update a hotel
- *     tags:
- *       - Hotels
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         description: Hotel ID (optional for create, required for update)
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               location:
- *                 type: string
- *               description:
- *                 type: string
- *               amenities:
- *                 type: array
- *                 items:
- *                   type: string
- *               image:
- *                 type: string
- *               rooms:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: integer
- *                     roomType:
- *                       type: string
- *                       enum:
- *                         - STANDARD
- *                         - DELUXE
- *                         - SUITE
- *                     price:
- *                       type: number
- *                     image:
- *                       type: string
- *                     amenities:
- *                       type: array
- *                       items:
- *                         type: string
- *                     quantity:
- *                       type: integer
- *             required:
- *               - name
- *               - location
- *               - description
- *               - amenities
- *               - image
- *     responses:
- *       200:
- *         description: Hotel updated successfully
- *       201:
- *         description: Hotel created successfully
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: Hotel not found
- *       500:
- *         description: Internal server error
- */
 export const CreateUpdateHotel = async (req: Request, res: Response) => {
   // ✅ Validate hotel data
   const validation = hotelSchema.safeParse(req.body);
@@ -177,33 +100,6 @@ export const CreateUpdateHotel = async (req: Request, res: Response) => {
 };
 
 
-/**
- * @openapi
- * /hotels/{id}:
- *   delete:
- *     summary: Delete a hotel
- *     tags:
- *       - Hotels
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Hotel deleted successfully
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- *       404:
- *         description: Hotel not found
- *       500:
- *         description: Internal server error
- */
 // Delete a Hotel
 export const deleteHotel = async (req: Request, res: Response) => {
   const hotelId = +req.params.id;
@@ -234,57 +130,6 @@ export const deleteHotel = async (req: Request, res: Response) => {
   return res.status(response.statusCode).json(response);
 }
 
-/**
- * @openapi
- * /hotels:
- *   get:
- *     summary: Get all hotels with pagination
- *     tags:
- *       - Hotels
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *     responses:
- *       200:
- *         description: List of hotels
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     items:
- *                       type: array
- *                       items:
- *                         type: object
- *                     pagination:
- *                       type: object
- *                       properties:
- *                         page:
- *                           type: integer
- *                         limit:
- *                           type: integer
- *                         total:
- *                           type: integer
- *                         totalPages:
- *                           type: integer
- *       500:
- *         description: Internal server error
- */
 // Get All Hotels
 export const getHotels = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
@@ -309,57 +154,6 @@ export const getHotels = async (req: Request, res: Response) => {
   return res.status(response.statusCode).json(response);
 }
 
-/**
- * @openapi
- * /hotels/{id}:
- *   get:
- *     summary: Get detailed hotel information including rooms and reviews
- *     tags:
- *       - Hotels
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Hotel details
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: integer
- *                     name:
- *                       type: string
- *                     location:
- *                       type: string
- *                     description:
- *                       type: string
- *                     image:
- *                       type: string
- *                     rooms:
- *                       type: array
- *                       items:
- *                         type: object
- *                     reviews:
- *                       type: array
- *                       items:
- *                         type: object
- *       404:
- *         description: Hotel not found
- *       500:
- *         description: Internal server error
- */
 // Get Detailed Hotel Information including Rooms
 export const getHotelDetails = async (req: Request, res: Response) => {
   const hotelId = +req.params.id;
@@ -388,81 +182,6 @@ export const getHotelDetails = async (req: Request, res: Response) => {
 };
 
 
-/**
- * @openapi
- * /hotels/search:
- *   get:
- *     summary: Search hotels by location, price range, and room type
- *     tags:
- *       - Hotels
- *     parameters:
- *       - in: query
- *         name: location
- *         schema:
- *           type: string
- *       - in: query
- *         name: minPrice
- *         schema:
- *           type: number
- *       - in: query
- *         name: maxPrice
- *         schema:
- *           type: number
- *       - in: query
- *         name: roomType
- *         schema:
- *           type: string
- *           enum:
- *             - STANDARD
- *             - DELUXE
- *             - SUITE
- *       - in: query
- *         name: name
- *         schema:
- *           type: string
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *     responses:
- *       200:
- *         description: List of matching hotels
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     items:
- *                       type: array
- *                       items:
- *                         type: object
- *                     pagination:
- *                       type: object
- *                       properties:
- *                         page:
- *                           type: integer
- *                         limit:
- *                           type: integer
- *                         total:
- *                           type: integer
- *                         totalPages:
- *                           type: integer
- *       500:
- *         description: Internal server error
- */
 // Search Hotels by Location, Room Type, and Price Range
 export const searchHotels = async (req: Request, res: Response) => {
 
@@ -522,54 +241,6 @@ export const searchHotels = async (req: Request, res: Response) => {
   res.status(response.statusCode).json(response);
 };
 
-/**
- * @openapi
- * /hotels/availability:
- *   get:
- *     summary: Check room availability for a specific date
- *     tags:
- *       - Hotels
- *     parameters:
- *       - in: query
- *         name: roomId
- *         required: true
- *         schema:
- *           type: integer
- *       - in: query
- *         name: date
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *       - in: query
- *         name: quantity
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Room availability status
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     isAvailable:
- *                       type: boolean
- *                     availAbality:
- *                       type: integer
- *       400:
- *         description: Bad request
- *       500:
- *         description: Internal server error
- */
 export const checkRoomAvailability = async (
   req: Request,
   res: Response

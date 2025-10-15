@@ -2,10 +2,12 @@
   "name": "booking-app-server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx nodemon",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/index.js",
+    "dev": "npx nodemon",
     "postinstall": "prisma generate",
     "seed": "ts-node prisma/seed.ts"
   },
