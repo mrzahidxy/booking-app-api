@@ -3,7 +3,7 @@ services:
     name: booking-app-server
     env: node
     buildCommand: npm install && npm run build
-    startCommand: node dist/src/index.js
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
