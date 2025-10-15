@@ -48,3 +48,4 @@ export const getRevenueReport = async (req: Request, res: Response) => {
     )
   );
 };
+

@@ -8,3 +8,4 @@ export const healthCheck = (req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
   });
 };
+

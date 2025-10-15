@@ -17,6 +17,7 @@ import { BadRequestException } from "../exceptions/bad-request";
 
 
 
+
 export const CreateUpdateHotel = async (req: Request, res: Response) => {
   // ✅ Validate hotel data
   const validation = hotelSchema.safeParse(req.body);
@@ -100,6 +101,7 @@ export const CreateUpdateHotel = async (req: Request, res: Response) => {
 };
 
 
+
 // Delete a Hotel
 export const deleteHotel = async (req: Request, res: Response) => {
   const hotelId = +req.params.id;
@@ -130,6 +132,7 @@ export const deleteHotel = async (req: Request, res: Response) => {
   return res.status(response.statusCode).json(response);
 }
 
+
 // Get All Hotels
 export const getHotels = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
@@ -153,6 +156,7 @@ export const getHotels = async (req: Request, res: Response) => {
   );
   return res.status(response.statusCode).json(response);
 }
+
 
 // Get Detailed Hotel Information including Rooms
 export const getHotelDetails = async (req: Request, res: Response) => {
@@ -183,6 +187,7 @@ export const getHotelDetails = async (req: Request, res: Response) => {
 
 
 // Search Hotels by Location, Room Type, and Price Range
+
 export const searchHotels = async (req: Request, res: Response) => {
 
   const { location, minPrice, maxPrice, roomType, name } = req.query;
@@ -240,6 +245,7 @@ export const searchHotels = async (req: Request, res: Response) => {
   );
   res.status(response.statusCode).json(response);
 };
+
 
 export const checkRoomAvailability = async (
   req: Request,
