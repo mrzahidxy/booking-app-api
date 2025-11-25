@@ -2,8 +2,8 @@ import jwt from "jsonwebtoken";
 import { NextFunction, Request, Response } from "express";
 import { UnauthorizedException } from "../exceptions/unauthorized";
 import { ErrorCode } from "../exceptions/root";
-import { JWT_SECRET } from "../secret";
-import prisma from "../connect";
+import env from "../utils/env";
+import prisma from "../utils/prisma";
 import { User } from "@prisma/client";
 
 export const authMiddleware = async (
@@ -24,10 +24,17 @@ export const authMiddleware = async (
   }
 
   try {
-    const payload = jwt.verify(token!, JWT_SECRET);
+    const payload = jwt.verify(token!, env.JWT_SECRET);
 
     const user = await prisma.user.findFirst({
       where: { id: (payload as any).id },
+      include: {
+        role: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
     if (!user) {

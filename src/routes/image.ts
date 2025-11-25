@@ -1,10 +1,8 @@
 import { Router } from "express";
 import { uploadImage } from "../controllers/image";
-import multer from "multer";
-import { storage } from "../config/cloudinary";
+import { uploadMiddleware } from "../middleware/upload.middleware";
+import { asyncHandler } from "../exceptions/async-handler";
 
 export const ImageRoutes: Router = Router();
 
-const upload = multer({ storage: storage });
-
-ImageRoutes.post("/upload", upload.single("image"), uploadImage)
+ImageRoutes.post("/upload", uploadMiddleware.single("image"), asyncHandler(uploadImage))

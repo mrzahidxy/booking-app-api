@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../connect";
+import prisma from "../utils/prisma";
 import { HTTPSuccessResponse } from "../helpers/success-response";
 import { ErrorCode, HTTPException } from "../exceptions/root";
 import { NotFoundException } from "../exceptions/not-found";

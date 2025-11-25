@@ -12,7 +12,11 @@ import express from "express";
 declare global {
     namespace Express {
       interface Request {
-        user?: User; // Add this line to declare the user property
+        user?: User & {
+          role?: {
+            name: string;
+          };
+        }; // Add this line to declare the user property
       }
     }
   }

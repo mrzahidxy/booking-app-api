@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import prisma from "../connect";
+import prisma from "../utils/prisma";
 import { UnauthorizedException } from "../exceptions/unauthorized";
 
 interface CustomRequest extends Request {

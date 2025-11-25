@@ -1,0 +1,32 @@
+import express from "express";
+import morgan from "morgan";
+import cors from "cors";
+import { raw } from "body-parser";
+import logger from "./utils/logger";
+import rootRouter from "./routes";
+import { errorMiddleware } from "./middleware/error";
+import { healthCheck } from "./controllers/healthCheck";
+import paymentWebhookRoutes from "./routes/payment-webhook";
+
+const app = express();
+
+app.use(
+  morgan("dev", {
+    stream: {
+      write: (message) => logger.http(message.trim()),
+    },
+  })
+);
+
+app.get("/health", healthCheck);
+
+app.use("/api/payments/webhook", raw({ type: "application/json" }), paymentWebhookRoutes);
+
+app.use(express.json());
+app.use(cors({ origin: "*" }));
+
+app.use("/api", rootRouter);
+
+app.use(errorMiddleware);
+
+export default app;
