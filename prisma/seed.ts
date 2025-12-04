@@ -4,47 +4,44 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 const permissions = [
-  "CREATE_USER",
-  "UPDATE_USER",
+  // User management
   "GET_USER",
-  "DELETE_USER",
-  "CREATE_ROLE",
-  "UPDATE_ROLE",
+  "UPDATE_USER",
+  // Role & permission reads/assignments
   "GET_ROLE",
-  "DELETE_ROLE",
-  "CREATE_PERMISSION",
-  "UPDATE_PERMISSION",
   "GET_PERMISSION",
-  "DELETE_PERMISSION",
-  "ASSIGN_PERMISSION",
   "GET_ASSIGNED_PERMISSION",
+  "ASSIGN_PERMISSION",
   "ASSIGN_ROLE",
-  "UPDATE_ASSIGN_ROLE",
+  // Domain management
+  "MANAGE_HOTEL",
+  "MANAGE_RESTAURANT",
+  "MANAGE_BOOKING",
 ];
 
 const roles = [
-  { name: "Admin", permissions: permissions },
+  { name: "Admin", permissions },
   {
-    name: "Moderator",
+    name: "Staff",
     permissions: [
       "GET_USER",
+      "UPDATE_USER",
       "GET_ROLE",
       "GET_PERMISSION",
-      "UPDATE_USER",
-      "UPDATE_ROLE",
+      "GET_ASSIGNED_PERMISSION",
+      "ASSIGN_PERMISSION",
+      "ASSIGN_ROLE",
+      "MANAGE_HOTEL",
+      "MANAGE_RESTAURANT",
+      "MANAGE_BOOKING",
     ],
   },
   {
-    name: "Editor",
+    name: "User",
     permissions: [
-      "CREATE_USER",
-      "UPDATE_USER",
-      "GET_USER",
-      "CREATE_ROLE",
-      "UPDATE_ROLE",
+      // keep empty; access is driven by auth-only endpoints
     ],
   },
-  { name: "User", permissions: ["GET_USER"] },
 ];
 
 async function createDefaultPermissions() {

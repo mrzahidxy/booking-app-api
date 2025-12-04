@@ -4,18 +4,16 @@ import { UnauthorizedException } from "../exceptions/unauthorized";
 import { ErrorCode } from "../exceptions/root";
 import env from "../utils/env";
 import prisma from "../utils/prisma";
-import { User } from "@prisma/client";
 
 export const authMiddleware = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
-  const token = req.headers.authorization;
-  
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
-    next(
+  if (!authHeader?.startsWith("Bearer ")) {
+    return next(
       new UnauthorizedException(
         "No token provided",
         ErrorCode.NO_TOKEN_PROVIDED
@@ -23,35 +21,44 @@ export const authMiddleware = async (
     );
   }
 
-  try {
-    const payload = jwt.verify(token!, env.JWT_SECRET);
+  const token = authHeader.split(" ")[1];
 
-    const user = await prisma.user.findFirst({
-      where: { id: (payload as any).id },
+  try {
+    const payload = jwt.verify(token, env.JWT_SECRET) as { id: number };
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
       include: {
         role: {
-          select: {
-            name: true,
+          include: {
+            rolePermission: {
+              include: { permission: true },
+            },
           },
         },
       },
     });
 
     if (!user) {
-      next(
+      return next(
         new UnauthorizedException(
-          "No token provided",
+          "Invalid token",
           ErrorCode.NO_TOKEN_PROVIDED
         )
       );
-    } 
+    }
 
-    req.user = user as User;
-    next();
-  } catch (error) {
-    next(
+    const permissions =
+      user.role?.rolePermission?.map((rp) => rp.permission.name) ?? [];
+
+    req.userPermissions = new Set(permissions);
+    req.user = { ...user, role: user.role ?? undefined };
+
+    return next();
+  } catch (_error) {
+    return next(
       new UnauthorizedException(
-        "No token provided",
+        "Invalid token",
         ErrorCode.NO_TOKEN_PROVIDED
       )
     );

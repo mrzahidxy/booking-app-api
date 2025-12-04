@@ -15,8 +15,10 @@ declare global {
         user?: User & {
           role?: {
             name: string;
+            rolePermission?: { permission: { name: string } }[];
           };
         }; // Add this line to declare the user property
+        userPermissions?: Set<string>;
       }
     }
   }

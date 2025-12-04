@@ -161,16 +161,6 @@ const swaggerDefinition = {
         },
         required: ["userId", "rating"],
       },
-      RoleRequest: {
-        type: "object",
-        properties: { name: { type: "string" } },
-        required: ["name"],
-      },
-      PermissionRequest: {
-        type: "object",
-        properties: { name: { type: "string" } },
-        required: ["name"],
-      },
       AssignPermissionsRequest: {
         type: "object",
         properties: {
@@ -798,20 +788,6 @@ const swaggerDefinition = {
           200: { description: "Roles list" },
         },
       },
-      post: {
-        tags: ["Roles & Permissions"],
-        summary: "Create role",
-        security: [{ BearerAuth: [] }],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": { schema: { $ref: "#/components/schemas/RoleRequest" } },
-          },
-        },
-        responses: {
-          201: { description: "Role created" },
-        },
-      },
     },
     "/api/role-permission/roles/{id}": {
       get: {
@@ -823,34 +799,6 @@ const swaggerDefinition = {
         ],
         responses: {
           200: { description: "Role details" },
-        },
-      },
-      put: {
-        tags: ["Roles & Permissions"],
-        summary: "Update role",
-        security: [{ BearerAuth: [] }],
-        parameters: [
-          { in: "path", name: "id", required: true, schema: { type: "integer" } },
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": { schema: { $ref: "#/components/schemas/RoleRequest" } },
-          },
-        },
-        responses: {
-          200: { description: "Role updated" },
-        },
-      },
-      delete: {
-        tags: ["Roles & Permissions"],
-        summary: "Delete role",
-        security: [{ BearerAuth: [] }],
-        parameters: [
-          { in: "path", name: "id", required: true, schema: { type: "integer" } },
-        ],
-        responses: {
-          200: { description: "Role deleted" },
         },
       },
     },
@@ -867,20 +815,6 @@ const swaggerDefinition = {
           200: { description: "Permissions list" },
         },
       },
-      post: {
-        tags: ["Roles & Permissions"],
-        summary: "Create permission",
-        security: [{ BearerAuth: [] }],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": { schema: { $ref: "#/components/schemas/PermissionRequest" } },
-          },
-        },
-        responses: {
-          201: { description: "Permission created" },
-        },
-      },
     },
     "/api/role-permission/permissions/{id}": {
       get: {
@@ -892,34 +826,6 @@ const swaggerDefinition = {
         ],
         responses: {
           200: { description: "Permission details" },
-        },
-      },
-      put: {
-        tags: ["Roles & Permissions"],
-        summary: "Update permission",
-        security: [{ BearerAuth: [] }],
-        parameters: [
-          { in: "path", name: "id", required: true, schema: { type: "integer" } },
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": { schema: { $ref: "#/components/schemas/PermissionRequest" } },
-          },
-        },
-        responses: {
-          200: { description: "Permission updated" },
-        },
-      },
-      delete: {
-        tags: ["Roles & Permissions"],
-        summary: "Delete permission",
-        security: [{ BearerAuth: [] }],
-        parameters: [
-          { in: "path", name: "id", required: true, schema: { type: "integer" } },
-        ],
-        responses: {
-          200: { description: "Permission deleted" },
         },
       },
     },
@@ -1099,4 +1005,3 @@ const options: Options = {
 };
 
 export const swaggerSpec = swaggerJSDoc(options);
-
