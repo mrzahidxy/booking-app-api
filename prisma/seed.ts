@@ -1,5 +1,8 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env" });
 
 const prisma = new PrismaClient();
 
@@ -26,11 +29,6 @@ const roles = [
     permissions: [
       "GET_USER",
       "UPDATE_USER",
-      "GET_ROLE",
-      "GET_PERMISSION",
-      "GET_ASSIGNED_PERMISSION",
-      "ASSIGN_PERMISSION",
-      "ASSIGN_ROLE",
       "MANAGE_HOTEL",
       "MANAGE_RESTAURANT",
       "MANAGE_BOOKING",
@@ -79,26 +77,46 @@ async function createDefaultRoles() {
         },
       },
     });
-
   }
 }
 
 // Create default Admin user
 async function createAdminUser() {
   const adminRole = await prisma.role.findUnique({
-    where: { name: 'Admin' },
+    where: { name: "Admin" },
   });
 
-  const hashedPassword = await bcrypt.hash('Password@123', 10); // Default password for admin
+  const hashedPassword = await bcrypt.hash("Password@123", 10); // Default password for admin
 
   await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
+    where: { email: "admin@example.com" },
     update: {},
     create: {
-      email: 'admin@example.com',
+      email: "admin@example.com",
       password: hashedPassword,
-      name: 'Admin User',
+      name: "Admin User",
       roleId: adminRole?.id, // Assign the Admin role
+    },
+  });
+}
+
+// Create default normal user
+async function createNormalUser() {
+  const userRole = await prisma.role.findUnique({
+    where: { name: "User" },
+  });
+
+  const hashedPassword = await bcrypt.hash("Password@123", 10);
+
+  await prisma.user.upsert({
+    where: { email: "user@example.com" },
+    update: {},
+    create: {
+      email: "user@example.com",
+      password: hashedPassword,
+      name: "John Doe",
+      phone: "1234567890",
+      roleId: userRole?.id,
     },
   });
 }
@@ -107,7 +125,10 @@ async function main() {
   await createDefaultPermissions();
   await createDefaultRoles();
   await createAdminUser();
-  console.log('Default permissions, roles, and admin user created successfully!');
+  await createNormalUser();
+  console.log(
+    "Default permissions, roles, admin user, and normal user created successfully!"
+  );
 }
 
 main()

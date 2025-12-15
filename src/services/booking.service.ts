@@ -223,25 +223,53 @@ export const createRoomBooking = async (params: {
 }) => {
   const { userId, roomId, bookingDate, quantity } = params;
 
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
-  });
+  const booking = await prisma.$transaction(async (tx) => {
+    const room = await tx.room.findUnique({
+      where: { id: roomId },
+    });
 
-  if (!room) {
-    throw new NotFoundException("Room not found", ErrorCode.ROOM_NOT_FOUND);
-  }
+    if (!room) {
+      throw new NotFoundException("Room not found", ErrorCode.ROOM_NOT_FOUND);
+    }
 
-  const totalPrice = room.price * Number(quantity);
+    const requestedQuantity = Number(quantity);
+    if (requestedQuantity < 1) {
+      throw new BadRequestException("Quantity must be at least 1", ErrorCode.BAD_REQUEST);
+    }
 
-  const booking = await prisma.booking.create({
-    data: {
-      userId,
-      roomId,
-      bookingDate,
-      totalPrice,
-      status: "PENDING",
-      roomQuantity: Number(quantity),
-    },
+    const roomBooked = await tx.booking.aggregate({
+      where: {
+        roomId,
+        bookingDate,
+        status: "CONFIRMED",
+      },
+      _sum: {
+        roomQuantity: true,
+      },
+    });
+
+    const totalBookedRooms = roomBooked._sum.roomQuantity ?? 0;
+    const isAvailable = totalBookedRooms + requestedQuantity <= room.quantity;
+
+    if (!isAvailable) {
+      throw new BadRequestException(
+        "Not enough rooms available",
+        ErrorCode.NOT_ENOUGH_ROOMS
+      );
+    }
+
+    const totalPrice = room.price * requestedQuantity;
+
+    return tx.booking.create({
+      data: {
+        userId,
+        roomId,
+        bookingDate,
+        totalPrice,
+        status: "PENDING",
+        roomQuantity: requestedQuantity,
+      },
+    });
   });
 
   return new HTTPSuccessResponse("Room booked successfully", 201, booking);
