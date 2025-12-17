@@ -11,11 +11,9 @@ import {
   updateRestaurant,
 } from "../controllers/restaurant";
 import { authMiddleware } from "../middleware/auth";
-import multer from "multer";
-import { storage } from "../config/cloudinary";
+import { uploadMiddleware } from "../middleware/upload.middleware";
 import checkPermission from "../middleware/check-permission";
 
-const upload = multer({ storage: storage });
 const restaurantRoutes: Router = Router();
 
 restaurantRoutes.get("/", asyncHandler(getAllRestaurants));
@@ -25,15 +23,14 @@ restaurantRoutes.get("/:id", asyncHandler(getRestaurantDetails));
 restaurantRoutes.post(
   "/",
   authMiddleware,
-  // checkPermission("CREATE_RESTAURANT"),
-  // upload.single("image"),
+  checkPermission("MANAGE_RESTAURANT"),
   asyncHandler(createRestaurant)
 );
 restaurantRoutes.put(
   "/:id",
   authMiddleware,
-  // checkPermission("UPDATE_RESTAURANT"),
-  upload.single("image"),
+  checkPermission("MANAGE_RESTAURANT"),
+  uploadMiddleware.single("image"),
   asyncHandler(updateRestaurant)
 );
 restaurantRoutes.post(
@@ -44,6 +41,7 @@ restaurantRoutes.post(
 restaurantRoutes.post(
   "/reservation/:id",
   authMiddleware,
+  checkPermission("MANAGE_RESTAURANT"),
   asyncHandler(updateBookingStatus)
 );
 

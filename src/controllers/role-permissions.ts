@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import prisma from "../connect";
+import prisma from "../utils/prisma";
 import { HTTPSuccessResponse } from "../helpers/success-response";
-import { ErrorCode, HTTPException } from "../exceptions/root";
+import { ErrorCode } from "../exceptions/root";
 import { NotFoundException } from "../exceptions/not-found";
 import { BadRequestException } from "../exceptions/bad-request";
 import { formatPaginationResponse } from "../utils/common-method";
@@ -56,77 +56,6 @@ export const getRoleById = async (req: Request, res: Response) => {
   return res.status(response.statusCode).json(response);
 }
 
-export const createRole = async (req: Request, res: Response) => {
-  const { name } = req.body;
-
-  // Check if role already exists
-  const existingRole = await prisma.role.findUnique({
-    where: { name },
-  });
-
-  if (existingRole) {
-    throw new HTTPException(
-      "Role already exists",
-      ErrorCode.ROLE_ALREADY_EXISTS,
-      400,
-      null
-    );
-  }
-
-  const role = await prisma.role.create({
-    data: {
-      name,
-    },
-  });
-
-  const response = new HTTPSuccessResponse(
-    "Role created successfully",
-    201,
-    role
-  );
-  res.status(response.statusCode).json(response);
-};
-
-export const updateRole = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { name } = req.body;
-
-  const role = await prisma.role.update({
-    where: {
-      id: +id,
-    },
-    data: {
-      name: name,
-    }
-  }
-  );
-
-  const response = new HTTPSuccessResponse(
-    "Role updated successfully",
-    200,
-    role
-  );
-  res.status(response.statusCode).json(response);
-};
-
-export const deleteRole = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  const role = await prisma.role.delete({
-    where: {
-      id: +id,
-    },
-  });
-
-  const response = new HTTPSuccessResponse(
-    "Role deleted successfully",
-    200,
-    role
-  );
-  res.status(response.statusCode).json(response);
-}
-
-
 // Permission Management
 export const getPermissions = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
@@ -151,37 +80,6 @@ export const getPermissions = async (req: Request, res: Response) => {
   return res.status(response.statusCode).json(response);
 
 };
-export const createPermission = async (req: Request, res: Response) => {
-  const { name } = req.body;
-
-  const existingPermission = await prisma.permission.findFirst({
-    where: {
-      name,
-    },
-  });
-
-  if (existingPermission) {
-    throw new HTTPException(
-      "Permission already exists",
-      ErrorCode.ADDRESS_NOT_FOUND,
-      400,
-      null
-    );
-  }
-
-  const role = await prisma.permission.create({
-    data: {
-      name,
-    },
-  });
-
-  const response = new HTTPSuccessResponse(
-    "Permission created successfully",
-    201,
-    role
-  );
-  res.status(response.statusCode).json(response);
-};
 
 export const getPermissionById = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -203,46 +101,6 @@ export const getPermissionById = async (req: Request, res: Response) => {
   )
   return res.status(response.statusCode).json(response);
 }
-
-export const updatePermission = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { name } = req.body;
-
-  const permission = await prisma.permission.update({
-    where: {
-      id: +id,
-    },
-    data: {
-      name: name,
-    }
-  }
-  );
-
-  const response = new HTTPSuccessResponse(
-    "Permission updated successfully",
-    200,
-    permission
-  );
-  res.status(response.statusCode).json(response);
-}
-
-export const deletePermission = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  const permission = await prisma.permission.delete({
-    where: {
-      id: +id,
-    },
-  });
-
-  const response = new HTTPSuccessResponse(
-    "Role deleted successfully",
-    200,
-    permission
-  );
-  res.status(response.statusCode).json(response);
-}
-
 
 // Ssign Permissions to Role
 

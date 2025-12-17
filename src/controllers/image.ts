@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { HTTPSuccessResponse } from "../helpers/success-response";
+import { buildImageUploadResponse } from "../services/image.service";
 
 // ✅ Image Upload Controller
 export const uploadImage = async (req: Request, res: Response) => {
@@ -9,10 +9,6 @@ export const uploadImage = async (req: Request, res: Response) => {
     }
 
     // ✅ Return the Cloudinary URL
-    const iamgeUrl = {
-        imageUrl: req.file.path,
-    }
-
-    const response = new HTTPSuccessResponse("Image uploaded successfully", 200, iamgeUrl);
+    const response = buildImageUploadResponse(req.file.path);
     return res.status(response.statusCode).send(response);
 };

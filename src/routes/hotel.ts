@@ -22,16 +22,23 @@ hotelRoutes.get("/search/result",  asyncHandler(searchHotels));
 hotelRoutes.post(
   "/",
   authMiddleware,
+  checkPermission("MANAGE_HOTEL"),
   asyncHandler(CreateUpdateHotel)
 );
 
 hotelRoutes.put(
   "/:id",
   authMiddleware,
+  checkPermission("MANAGE_HOTEL"),
   asyncHandler(CreateUpdateHotel)
 );
 
-hotelRoutes.delete("/:id", authMiddleware, asyncHandler(deleteHotel));
+hotelRoutes.delete(
+  "/:id",
+  authMiddleware,
+  checkPermission("MANAGE_HOTEL"),
+  asyncHandler(deleteHotel)
+);
 
 hotelRoutes.get("/booked", asyncHandler(checkRoomAvailability));
 

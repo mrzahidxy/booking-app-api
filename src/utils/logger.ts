@@ -2,6 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createLogger, format, transports } from 'winston';
+import env from './env';
 
 const { combine, timestamp, printf, colorize, errors } = format;
 
@@ -11,7 +12,7 @@ const logFormat = printf(({ level, message, timestamp, stack }) => {
 });
 
 // Check if we're running on Vercel
-const isVercel = process.env.VERCEL === '1';
+const isVercel = env.VERCEL === '1';
 
 // Setup transports array
 const loggerTransports: any[] = [];
