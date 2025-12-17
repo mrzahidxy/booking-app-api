@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { stripe } from "./stripe.service";
+import { getStripe } from "./stripe.service";
 import prisma from "../utils/prisma";
 import env from "../utils/env";
 
@@ -19,6 +19,7 @@ export const createCheckoutSessionService = async (bookingId: number, domain: st
     amount = Math.round((booking?.totalPrice / 120) * 100);
   }
 
+  const stripe = getStripe();
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [
@@ -61,6 +62,7 @@ export const createCheckoutSessionService = async (bookingId: number, domain: st
 };
 
 export const handleStripeWebhookEvent = async (payload: Buffer, signature: string | string[]) => {
+  const stripe = getStripe();
   const event: Stripe.Event = stripe.webhooks.constructEvent(
     payload,
     signature,

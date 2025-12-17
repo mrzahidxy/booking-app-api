@@ -5,7 +5,7 @@ import { ErrorCode } from "../exceptions/root";
 import { HTTPSuccessResponse } from "../helpers/success-response";
 import prisma from "../utils/prisma";
 import { formatPaginationResponse } from "../utils/common-method";
-import { messaging } from "./firebase-admin.service";
+import { getMessaging } from "./firebase-admin.service";
 
 export const fetchUserBookings = async (params: {
   userId?: number;
@@ -197,6 +197,7 @@ export const updateBookingStatus = async (params: {
       };
 
       try {
+        const messaging = getMessaging();
         await messaging.send(message);
       } catch (error) {
         console.error("Error sending notification:", error);

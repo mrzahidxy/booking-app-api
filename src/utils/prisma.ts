@@ -1,13 +1,22 @@
 import { PrismaClient } from "@prisma/client";
 
-const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient;
+let prisma: PrismaClient | null = null;
+
+// Lazy-initialize Prisma so cold starts and simple routes (like /live) don't spin up a DB connection until needed.
+const getPrisma = (): PrismaClient => {
+  if (!prisma) {
+    prisma = new PrismaClient();
+  }
+  return prisma;
 };
 
-const prisma = globalForPrisma.prisma ?? new PrismaClient();
+// Lazy proxy so existing imports don't trigger a connection until first query.
+const prismaProxy = new Proxy({} as PrismaClient, {
+  get: (_target, prop, receiver) => {
+    const client = getPrisma();
+    const value = Reflect.get(client as any, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
-
-export default prisma;
+export default prismaProxy;

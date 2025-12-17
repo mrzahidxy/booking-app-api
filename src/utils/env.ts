@@ -1,8 +1,6 @@
 import dotenv from "dotenv";
 import { z } from "zod";
 
-dotenv.config({ path: ".env" });
-
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -27,6 +25,15 @@ const envSchema = z.object({
   VERCEL: z.string().optional(),
 });
 
-const env = envSchema.parse(process.env);
+let cachedEnv: z.infer<typeof envSchema> | null = null;
+
+const loadEnv = () => {
+  if (cachedEnv) return cachedEnv;
+  dotenv.config({ path: ".env" });
+  cachedEnv = envSchema.parse(process.env);
+  return cachedEnv;
+};
+
+const env = loadEnv();
 
 export default env;

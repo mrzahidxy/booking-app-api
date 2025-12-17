@@ -5,7 +5,7 @@ import { raw } from "body-parser";
 import logger from "./utils/logger";
 import rootRouter from "./routes";
 import { errorMiddleware } from "./middleware/error";
-import { healthCheck } from "./controllers/healthCheck";
+import { healthCheck, liveCheck } from "./controllers/healthCheck";
 import paymentWebhookRoutes from "./routes/payment-webhook";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./docs/swagger";
@@ -20,6 +20,7 @@ app.use(
   })
 );
 
+app.get("/live", liveCheck);
 app.get("/health", healthCheck);
 
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
