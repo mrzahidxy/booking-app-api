@@ -13,12 +13,10 @@ cloudinary.config({
   api_secret: env.CLOUDINARY_API_SECRET,
 });
 
-const storage = new CloudinaryStorage({
+export const storage = new CloudinaryStorage({
   cloudinary,
   params: {
     folder: "booking_images",
     allowed_formats: ["jpg", "png"],
   } as CloudinaryParams,
 });
-
-export { cloudinary, storage };
