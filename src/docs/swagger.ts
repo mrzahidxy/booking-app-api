@@ -1,4 +1,33 @@
 import swaggerJSDoc, { Options } from "swagger-jsdoc";
+import env from "../utils/env";
+
+const resolveServerUrls = () => {
+  const servers: { url: string; description: string }[] = [];
+
+  const renderProductionUrl = process.env.RENDER_EXTERNAL_URL;
+  const renderStagingUrl = process.env.RENDER_STAGING_URL;
+  const productionUrl =
+    process.env.API_BASE_URL ||
+    process.env.SERVER_URL ||
+    process.env.PRODUCTION_URL;
+
+  if (renderProductionUrl) {
+    servers.push({ url: renderProductionUrl, description: "Render Production" });
+  }
+  if (renderStagingUrl) {
+    servers.push({ url: renderStagingUrl, description: "Render Staging" });
+  }
+  if (!renderProductionUrl && !renderStagingUrl && productionUrl) {
+    servers.push({ url: productionUrl, description: "Production" });
+  }
+
+  servers.push({
+    url: `http://localhost:${env.PORT}`,
+    description: "Local",
+  });
+
+  return servers;
+};
 
 const swaggerDefinition = {
   openapi: "3.0.1",
@@ -8,12 +37,7 @@ const swaggerDefinition = {
     description:
       "API documentation for the Booking App (hotels, restaurants, bookings, payments, notifications, roles, and users).",
   },
-  servers: [
-    {
-      url: "http://localhost:8000",
-      description: "Local",
-    },
-  ],
+  servers: resolveServerUrls(),
   tags: [
     { name: "Health" },
     { name: "Auth" },
