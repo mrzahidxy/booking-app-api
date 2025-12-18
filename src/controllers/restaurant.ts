@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
-import { HTTPSuccessResponse } from "../helpers/success-response";
-import { reservationSchema, bookingStatusSchema } from "../schemas/booking";
+import { reservationSchema } from "../schemas/booking";
 import { handleValidationError } from "../utils/common-method";
 import { restaurantSchema } from "../schemas/restaurant";
 import {
@@ -10,7 +9,6 @@ import {
   fetchRestaurantsService,
   reserveTableService,
   searchRestaurantsService,
-  updateRestaurantBookingStatusService,
   updateRestaurantService,
 } from "../services/restaurant.service";
 
@@ -133,34 +131,3 @@ export const reserveTable = async (req: Request, res: Response) => {
 
   return res.status(response.statusCode).json(response);
 };
-
-// Update booking status
-export const updateBookingStatus = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { status } = req.body;
-
-  // Validate request data
-  const validationResult = bookingStatusSchema.safeParse({
-    bookingId: id,
-    status,
-  });
-
-  if (!validationResult.success) {
-    return handleValidationError(res, validationResult);
-  }
-
-  const validStatus = validationResult.data.status as
-    | "PENDING"
-    | "CONFIRMED"
-    | "CANCELLED"
-    | "COMPLETED";
-
-  const result = await updateRestaurantBookingStatusService({
-    bookingId: +id,
-    status: validStatus,
-  });
-
-  // Send success response
-  return res.status(result.statusCode).json(result.body);
-};
-

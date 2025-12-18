@@ -497,10 +497,10 @@ const swaggerDefinition = {
         },
       },
     },
-    "/api/restaurants/reservation/check": {
+    "/api/bookings/check-restaurant": {
       get: {
-        tags: ["Restaurants"],
-        summary: "Check table availability",
+        tags: ["Bookings"],
+        summary: "Check restaurant table availability",
         parameters: [
           { in: "query", name: "restaurantId", required: true, schema: { type: "integer" } },
           { in: "query", name: "date", required: true, schema: { type: "string", format: "date" } },
@@ -520,10 +520,10 @@ const swaggerDefinition = {
         },
       },
     },
-    "/api/restaurants/reservation": {
+    "/api/bookings/restaurant": {
       post: {
-        tags: ["Restaurants"],
-        summary: "Reserve a table",
+        tags: ["Bookings"],
+        summary: "Book a restaurant table",
         security: [{ BearerAuth: [] }],
         requestBody: {
           required: true,
@@ -536,27 +536,6 @@ const swaggerDefinition = {
         responses: {
           200: { description: "Reservation created" },
           400: { description: "Validation error" },
-        },
-      },
-    },
-    "/api/restaurants/reservation/{id}": {
-      post: {
-        tags: ["Restaurants"],
-        summary: "Update reservation status",
-        security: [{ BearerAuth: [] }],
-        parameters: [
-          { in: "path", name: "id", required: true, schema: { type: "integer" } },
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/BookingStatusUpdateRequest" },
-            },
-          },
-        },
-        responses: {
-          200: { description: "Status updated" },
         },
       },
     },

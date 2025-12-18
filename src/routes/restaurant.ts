@@ -1,13 +1,10 @@
 import { Router } from "express";
 import { asyncHandler } from "../exceptions/async-handler";
 import {
-  checkTableAvailability,
   createRestaurant,
   getAllRestaurants,
   getRestaurantDetails,
-  reserveTable,
   searchRestaurants,
-  updateBookingStatus,
   updateRestaurant,
 } from "../controllers/restaurant";
 import { authMiddleware } from "../middleware/auth";
@@ -30,23 +27,6 @@ restaurantRoutes.put(
   authMiddleware,
   checkPermission("MANAGE_RESTAURANT"),
   asyncHandler(updateRestaurant)
-);
-restaurantRoutes.post(
-  "/reservation",
-  authMiddleware,
-  asyncHandler(reserveTable)
-);
-restaurantRoutes.post(
-  "/reservation/:id",
-  authMiddleware,
-  checkPermission("MANAGE_RESTAURANT"),
-  asyncHandler(updateBookingStatus)
-);
-
-restaurantRoutes.get(
-  "/reservation/check",
-  // authMiddleware,
-  asyncHandler(checkTableAvailability)
 );
 
 export default restaurantRoutes;
