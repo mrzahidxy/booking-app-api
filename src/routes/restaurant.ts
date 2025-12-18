@@ -11,7 +11,6 @@ import {
   updateRestaurant,
 } from "../controllers/restaurant";
 import { authMiddleware } from "../middleware/auth";
-import { uploadMiddleware } from "../middleware/upload.middleware";
 import checkPermission from "../middleware/check-permission";
 
 const restaurantRoutes: Router = Router();
@@ -30,7 +29,6 @@ restaurantRoutes.put(
   "/:id",
   authMiddleware,
   checkPermission("MANAGE_RESTAURANT"),
-  uploadMiddleware.single("image"),
   asyncHandler(updateRestaurant)
 );
 restaurantRoutes.post(
