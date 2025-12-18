@@ -34,8 +34,7 @@ export const createRestaurant = async (req: Request, res: Response) => {
 
 export const updateRestaurant = async (req: Request, res: Response) => {
   const restaurantId = +req.params.id;
-  const { name, location, cuisine, seats, menu, timeSlots, description } = req.body;
-  const imageUrl = req.file ? req.file.path : null;
+  const { name, location, cuisine, seats, menu, timeSlots, description, image } = req.body;
 
   const response = await updateRestaurantService({
     restaurantId,
@@ -46,7 +45,7 @@ export const updateRestaurant = async (req: Request, res: Response) => {
       seats: seats ? +seats : undefined,
       menu,
       description,
-      image: imageUrl ? [imageUrl] : undefined,
+      image,
       timeSlots,
     },
   });
@@ -164,5 +163,4 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
   // Send success response
   return res.status(result.statusCode).json(result.body);
 };
-
 
