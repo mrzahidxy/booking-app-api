@@ -38,7 +38,7 @@ export const getBookings = async (req: Request, res: Response) => {
 // Update booking status
 export const bookingStatusUpdate = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { status, type } = req.body;
+  const { status } = req.body;
 
   // Validate request data
   const validationResult = bookingStatusSchema.safeParse({
@@ -55,7 +55,6 @@ export const bookingStatusUpdate = async (req: Request, res: Response) => {
   const result = await updateBookingStatus({
     bookingId: +id,
     status: validStatus,
-    type,
   });
 
   // Send success response

@@ -7,6 +7,17 @@ import prisma from "../utils/prisma";
 import { formatPaginationResponse } from "../utils/common-method";
 import { getMessaging } from "./firebase-admin.service";
 
+type BookingKind = "room" | "restaurant";
+
+const getBookingKind = (booking: { roomId: number | null; restaurantId: number | null }): BookingKind => {
+  if (booking.roomId && booking.restaurantId) {
+    throw new BadRequestException("Booking is ambiguous (both room and restaurant set)", ErrorCode.BAD_REQUEST);
+  }
+  if (booking.roomId) return "room";
+  if (booking.restaurantId) return "restaurant";
+  throw new BadRequestException("Booking type could not be determined", ErrorCode.BAD_REQUEST);
+};
+
 export const fetchUserBookings = async (params: {
   userId?: number;
   page?: number;
@@ -84,12 +95,11 @@ export const fetchBookings = async (params: { page?: number; limit?: number }) =
 export const updateBookingStatus = async (params: {
   bookingId: number;
   status: BookingStatus;
-  type?: string;
 }) => {
-  const { bookingId, status, type } = params;
+  const { bookingId, status } = params;
 
   const updatedBooking = await prisma.$transaction(async (tx) => {
-    const existingBooking = await prisma.booking.findUnique({
+    const existingBooking = await tx.booking.findUnique({
       where: { id: bookingId },
       include: {
         user: true,
@@ -100,8 +110,10 @@ export const updateBookingStatus = async (params: {
       throw new NotFoundException("Booking not found", ErrorCode.BOOKING_NOT_FOUND);
     }
 
+    const bookingKind = getBookingKind(existingBooking);
+
     if (status === "CONFIRMED") {
-      if (type === "room") {
+      if (bookingKind === "room") {
         const room = await tx.room.findUnique({
           where: { id: existingBooking.roomId! },
         });
@@ -124,18 +136,14 @@ export const updateBookingStatus = async (params: {
 
         const totalBookedRooms = roomBooked._sum.roomQuantity ?? 0;
         const requestedRoomQuantity = existingBooking.roomQuantity ?? 1;
-        const isAvailable =
-          totalBookedRooms + requestedRoomQuantity <= roomAvailable;
+        const isAvailable = totalBookedRooms + requestedRoomQuantity <= roomAvailable;
 
         if (!isAvailable) {
-          throw new BadRequestException(
-            "Not enough seats available",
-            ErrorCode.NOT_ENOUGH_ROOMS
-          );
+          throw new BadRequestException("Not enough rooms available", ErrorCode.NOT_ENOUGH_ROOMS);
         }
       }
 
-      if (type === "restaurant") {
+      if (bookingKind === "restaurant") {
         const restaurant = await tx.restaurant.findUnique({
           where: { id: existingBooking.restaurantId! },
           select: { seats: true },
@@ -159,14 +167,10 @@ export const updateBookingStatus = async (params: {
 
         const totalBookedSeats = seatBooked._sum.partySize ?? 0;
         const requestedPartySize = existingBooking.partySize ?? 1;
-        const isAvailable =
-          totalBookedSeats + requestedPartySize <= seatAvailable;
+        const isAvailable = totalBookedSeats + requestedPartySize <= seatAvailable;
 
         if (!isAvailable) {
-          throw new BadRequestException(
-            "Not enough seats available",
-            ErrorCode.NOT_ENOUGH_SEATS
-          );
+          throw new BadRequestException("Not enough seats available", ErrorCode.NOT_ENOUGH_SEATS);
         }
       }
     }

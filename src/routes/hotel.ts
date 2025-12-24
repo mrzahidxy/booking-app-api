@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../exceptions/async-handler";
 import {
-  checkRoomAvailability,
   CreateUpdateHotel,
   deleteHotel,
   getHotelDetails,
@@ -39,6 +38,4 @@ hotelRoutes.delete(
   checkPermission("MANAGE_HOTEL"),
   asyncHandler(deleteHotel)
 );
-
-hotelRoutes.get("/booked", asyncHandler(checkRoomAvailability));
 
