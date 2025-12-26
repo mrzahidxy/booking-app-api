@@ -23,9 +23,9 @@ const permissions = [
 ];
 
 const roles = [
-  { name: "Admin", permissions },
+  { name: "ADMIN", permissions },
   {
-    name: "Staff",
+    name: "STAFF",
     permissions: [
       "GET_USER",
       "UPDATE_USER",
@@ -35,7 +35,7 @@ const roles = [
     ],
   },
   {
-    name: "User",
+    name: "USER",
     permissions: [
       // keep empty; access is driven by auth-only endpoints
     ],
@@ -223,16 +223,16 @@ async function upsertUser({
 
 async function createUsers() {
   await Promise.all([
-    upsertUser({ email: "admin@example.com", roleName: "Admin", name: "Admin User" }),
+    upsertUser({ email: "admin@example.com", roleName: "ADMIN", name: "Admin User" }),
     upsertUser({
       email: "staff@example.com",
-      roleName: "Staff",
+      roleName: "STAFF",
       name: "Front Desk Staff",
       phone: "01700111222",
     }),
     upsertUser({
       email: "user@example.com",
-      roleName: "User",
+      roleName: "USER",
       name: "Arif Rahman",
       phone: "01733999888",
     }),

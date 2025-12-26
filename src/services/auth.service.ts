@@ -26,7 +26,7 @@ export const signupUser = async (payload: {
   }
 
   const userRoleId = await prisma.role.findUnique({
-    where: { name: "User" },
+    where: { name: "USER" },
   });
 
   user = await prisma.user.create({
