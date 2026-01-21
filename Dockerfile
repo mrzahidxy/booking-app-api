@@ -10,13 +10,13 @@ RUN apt-get update \
 FROM base AS deps
 COPY package.json package-lock.json ./
 COPY prisma/schema.prisma ./prisma/schema.prisma
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 FROM deps AS builder
 COPY tsconfig.json ./
 COPY prisma ./prisma
 COPY src ./src
-RUN npm run build
+RUN npm run prisma:generate && npm run build
 
 FROM deps AS production-deps
 RUN npm prune --omit=dev
