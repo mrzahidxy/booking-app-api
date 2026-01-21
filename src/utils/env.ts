@@ -22,7 +22,6 @@ const envSchema = z.object({
   FRONTEND_DOMAIN: z.string().default("http://localhost:3000"),
 
   FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),
-  VERCEL: z.string().optional(),
 });
 
 let cachedEnv: z.infer<typeof envSchema> | null = null;
