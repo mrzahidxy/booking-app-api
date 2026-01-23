@@ -19,7 +19,7 @@ COPY src ./src
 RUN npm run prisma:generate && npm run build
 
 FROM deps AS production-deps
-RUN npm prune --omit=dev
+RUN npm run prisma:generate && npm prune --omit=dev
 
 FROM base AS production
 ENV NODE_ENV=production
