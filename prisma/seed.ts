@@ -1,5 +1,5 @@
 import { PrismaClient, RoomType, TimeSlotType } from "@prisma/client";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 
 dotenv.config({ path: ".env" });
