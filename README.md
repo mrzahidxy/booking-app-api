@@ -1,19 +1,23 @@
-# 🏨 Booking App API
+# 🏨 Booking Platform API
 
-A TypeScript + Express backend that powers the Booking App experience. It exposes guarded REST endpoints for hotels, restaurants, rooms, bookings, payments, and notifications, using PostgreSQL via Prisma ORM. This repo contains only the API layer; the Next.js client consumes these endpoints.
+![Version 1](https://img.shields.io/badge/Version-1-blue?style=for-the-badge)
+
+Version 1 release of the Gontobbo booking platform API.
+
+A TypeScript + Express backend for the hotel and restaurant booking platform. It powers search, booking, payments, notifications, and admin workflows for the Next.js client. The API uses PostgreSQL with Prisma ORM and exposes the REST endpoints consumed by the frontend.
 
 ---
 
 ## 🚀 Features
 
-- 🔐 JWT authentication with role & permission management seeded via Prisma
-- 🏨 CRUD management for hotels, rooms, and restaurant catalogues with amenities & rich descriptions
-- 📅 Booking flow with room quantity tracking, guest counts, and review management
-- 📸 Cloudinary uploads for hotel/restaurant/gallery images
-- 💳 Stripe Checkout & webhook handling for payment intents and receipts
-- 🔔 Notification service integrated with Firebase Cloud Messaging
-- 🛡️ Centralized validation using Zod and consistent error/success response helpers
-- 📘 Interactive Swagger documentation served from `/api/docs`
+- 🔐 JWT authentication with role and permission management
+- 🏨 CRUD management for hotels, rooms, and restaurants
+- 📅 Booking flow with room quantity tracking and booking status updates
+- 💳 Stripe payment processing with checkout and webhook handling
+- 🔔 Notification service with Firebase integration
+- 📸 Cloudinary uploads for hotel, restaurant, and gallery images
+- 🛡️ Zod validation with shared success and error response helpers
+- 📘 Swagger documentation at `/api/docs`
 
 ---
 
@@ -21,92 +25,127 @@ A TypeScript + Express backend that powers the Booking App experience. It expose
 
 - **Runtime**: Node.js, Express, TypeScript
 - **Database**: PostgreSQL + Prisma ORM
-- **File Storage**: Cloudinary
-- **Payments**: Stripe Checkout & webhooks
-- **Messaging**: Firebase Admin SDK
-- **Validation & Tooling**: Zod, dotenv, Winston logger, Swagger UI
+- **Storage**: Cloudinary
+- **Payments**: Stripe
+- **Notifications**: Firebase Admin SDK
+- **Validation**: Zod
+- **Logging**: Winston
+- **Docs**: Swagger UI / OpenAPI
 
 ---
 
 ## ✅ Prerequisites
 
 - Node.js 20+
-- PostgreSQL 14+ (local instance or a managed service such as Supabase)
-- Stripe account & webhook secret for end-to-end payments (optional for local dev)
-- Cloudinary & Firebase credentials if you want media uploads + push notifications locally
+- PostgreSQL 14+ or a compatible hosted database
+- Stripe account and webhook secret for payment flows
+- Cloudinary credentials for media uploads
+- Firebase service account JSON for push notifications
 
 ---
 
 ## 🚀 Getting Started
 
 ```bash
-git clone https://github.com/your-username/booking-app-api.git
-cd booking-app-api
-cp .env.example .env              # Update the values before running
+cd api
 npm install
-npm run prisma:generate           # Generates Prisma client
-npm run prisma:migrate            # Apply dev migrations
-npm run seed                      # Creates default roles, permissions & users
-npm run dev                       # Starts the server on http://localhost:8000
+cp .env.example .env
+npm run prisma:generate
+npm run prisma:migrate
+npm run seed
+npm run dev
 ```
 
-For a production-like run, execute `npm run build` followed by `npm start` (which will serve the transpiled output from `dist/`).
+PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+For a production run, build first and then start the compiled server:
+
+```bash
+npm run build
+npm start
+```
 
 ---
 
 ## 🔐 Environment Variables
 
-| Variable | What it controls |
-| --- | --- |
-| `DATABASE_URL` | Connection string Prisma uses at runtime (can point to pooled Supabase URL) |
-| `DIRECT_URL` | Direct connection for running migrations (non-pooled) |
-| `PORT` | API port, defaults to `8000` |
-| `JWT_SECRET` | Secret used to sign and verify JWT access tokens |
-| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Credentials for media uploads |
-| `STRIPE_PAYMENT_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Server key for creating Checkout sessions and validating webhooks |
-| `FRONTEND_DOMAIN` | URL that should receive post-payment redirects |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | Base64 encoded Firebase service account used to send push notifications |
+Documented in [`.env.example`](./.env.example):
 
-Refer to `.env.example` for the latest list and placeholders.
+| Variable | Purpose |
+| --- | --- |
+| `NODE_ENV` | Optional runtime mode used by the app, defaults to `development` |
+| `DATABASE_URL` | Prisma connection string for the pooled database |
+| `DIRECT_URL` | Direct database connection used for migrations |
+| `PORT` | API port, defaults to `8000` |
+| `JWT_SECRET` | Secret used to sign JWT access tokens |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret |
+| `STRIPE_PAYMENT_SECRET_KEY` | Stripe secret key used to create payment sessions |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook secret used to verify webhook requests |
+| `FRONTEND_DOMAIN` | Frontend origin used for redirects after payment actions |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Base64 encoded Firebase service account JSON for notifications |
 
 ---
 
 ## 🗃️ Database & Prisma
 
-- `npm run prisma:migrate` – runs `prisma migrate dev` locally.
-- `npm run prisma:deploy` – applies migrations in production.
-- `npm run prisma:push` – syncs the schema without migrations (useful for quick prototyping).
-- `npm run prisma:generate` – regenerates the Prisma client (also executed on `postinstall`).
+- `npm run prisma:generate` regenerates the Prisma client.
+- `npm run prisma:migrate` runs local development migrations.
+- `npm run prisma:deploy` applies migrations in production.
+- `npm run prisma:push` syncs the schema without migrations.
 
 ---
 
 ## 🌱 Seed Data
 
-`npm run seed` populates:
+`npm run seed` seeds:
 
-- Base permissions & default `Admin`, `Staff`, and `User` roles.
-- An admin user → `admin@example.com` / `Password@123`.
-- A standard user → `user@example.com` / `Password@123`.
+- Default roles and permissions
+- Admin, staff, and user accounts
+- Baseline data needed for the booking flow
 
-Change passwords immediately in real environments.
+Update the seeded credentials before using this in a real environment.
 
 ---
 
-## 📚 Useful NPM Scripts
+## 📚 NPM Scripts
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Starts the TypeScript server with Nodemon |
-| `npm run build` | Emits JavaScript to `dist/` |
-| `npm start` | Runs the compiled server |
-| `npm run seed` | Executes `prisma/seed.ts` |
-| `npm run prisma:*` | Namespaced helpers from `package.json` (generate/migrate/deploy/push) |
+| `npm run dev` | Starts the API with Nodemon |
+| `npm run build` | Compiles the TypeScript source to `dist/` |
+| `npm run prestart` | Runs `npm run build` before `npm start` |
+| `npm run start` | Starts the compiled server from `dist/server.js` |
+| `npm run postinstall` | Runs Prisma generate and build after install |
+| `npm run prisma:generate` | Generates the Prisma client |
+| `npm run prisma:migrate` | Runs Prisma migrate dev |
+| `npm run prisma:deploy` | Runs Prisma migrate deploy |
+| `npm run prisma:push` | Pushes the schema directly to the database |
+| `npm run seed` | Seeds the database |
+
+---
+
+## 🚀 Deployment
+
+The API now uses a Docker-based GitHub Actions workflow at [`.github/workflows/docker-publish.yml`](./.github/workflows/docker-publish.yml).
+
+- Pushes to `main` build and push the image to Docker Hub.
+- Manual runs are also supported.
+- The published image tags are `latest` and the commit SHA.
+- The container expects the same runtime environment variables listed above, so your VPS should provide them when running the image.
 
 ---
 
 ## 📘 API Documentation
 
-Swagger UI is exposed at `http://localhost:8000/api/docs` and always reflects the current schema defined in `src/docs/swagger.ts`. The raw OpenAPI JSON can be downloaded from `/api/docs.json`, which is useful for Postman collections or client generation.
+Swagger UI is available at `http://localhost:8000/api/docs`.
+
+The raw OpenAPI JSON is available at `http://localhost:8000/api/docs.json`.
 
 ---
 
