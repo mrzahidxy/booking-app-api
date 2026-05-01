@@ -1,4 +1,4 @@
-import { compareSync, hashSync } from "bcrypt";
+import { compareSync, hashSync } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../utils/prisma";
 import { BadRequestException } from "../exceptions/bad-request";
