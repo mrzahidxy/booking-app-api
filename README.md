@@ -130,6 +130,17 @@ Update the seeded credentials before using this in a real environment.
 
 ---
 
+## 🚀 Deployment
+
+The API now uses a Docker-based GitHub Actions workflow at [`.github/workflows/docker-publish.yml`](./.github/workflows/docker-publish.yml).
+
+- Pushes to `main` build and push the image to Docker Hub.
+- Manual runs are also supported.
+- The published image tags are `latest` and the commit SHA.
+- The container expects the same runtime environment variables listed above, so your VPS should provide them when running the image.
+
+---
+
 ## 📘 API Documentation
 
 Swagger UI is available at `http://localhost:8000/api/docs`.
