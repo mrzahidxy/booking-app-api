@@ -9,6 +9,7 @@ import { ImageRoutes } from "./image";
 import { bookingRoute } from "./booking";
 import notificationRoutes from "./notification";
 import { paymentRoutes } from "./payment";
+import adminRoutes from "./admin";
 
 
 const rootRouter: Router = Router();
@@ -23,5 +24,6 @@ rootRouter.use('/images', ImageRoutes)
 rootRouter.use('/bookings', bookingRoute)
 rootRouter.use('/notifications', notificationRoutes)
 rootRouter.use('/payments', paymentRoutes)
+rootRouter.use('/admin', adminRoutes)
 
 export default rootRouter

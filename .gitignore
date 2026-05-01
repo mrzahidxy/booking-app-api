@@ -9,5 +9,3 @@ dist/
 # Ignore Firebase admin credentials
 src/config/firebase-admin.json
 
-# vercel
-.vercel
